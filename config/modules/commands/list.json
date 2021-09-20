@@ -1,0 +1,1 @@
+{"progName": "list", "friendAvailable": true, "groupAvailable": true, "permittedUsers": [], "disabledUsers": [], "disabledGroups": [], "description": "指令查询", "examples": [["", "返回全部指令"]]}
