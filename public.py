@@ -10,10 +10,10 @@ class customParser(ArgumentParser): #自定义 ArgumentParser 子类，覆盖原
     def get_epilog(prog, examples): #根据接收数据生成 epilog
         return "{}\n{}".format("例如：", "\n".join(["{}{} {}{}（{}）".format(getValue("identifier"), prog, _[0], " " if _[0] else "", _[1]) for _ in examples]))
 
-class helpException(Exception):
+class helpException(Exception): #显示帮助
     pass
 
-class parseException(Exception):
+class parseException(Exception): #解析时出错
     pass
 
 class commandProperties(): #指令
