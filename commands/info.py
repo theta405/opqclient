@@ -7,7 +7,7 @@ import psutil
 from public import customParser, commandProperties
 from argparse import RawDescriptionHelpFormatter
 
-properties = commandProperties(
+defaultProperties = commandProperties(
      __file__.split("/")[-1].split(".")[0], 
     True, 
     True, 
@@ -23,7 +23,7 @@ properties = commandProperties(
 #执行指令
 
 def execute(receive, sender, group):
-    parser = customParser(prog = properties.progName, description = properties.examples, epilog = customParser.get_epilog(properties.progName, properties.examples), formatter_class = RawDescriptionHelpFormatter)
+    parser = customParser(prog = defaultProperties.progName, description = defaultProperties.examples, epilog = customParser.get_epilog(defaultProperties.progName, defaultProperties.examples), formatter_class = RawDescriptionHelpFormatter)
 
     #parser.add_argument("year", type = int, help = "查询的年份 [ %(type)s ]")
 

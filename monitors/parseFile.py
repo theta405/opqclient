@@ -1,15 +1,15 @@
 #模块特殊操作
 
 from urllib.request import urlretrieve #下载文件
-from threading import Semaphore
+from threading import Thread #多线程
 from public import sendMsg, postQQ
-import json
+from json import dumps
 
 #通用部分
 
 from public import monitorProperties
 
-properties = monitorProperties(
+defaultProperties = monitorProperties(
      __file__.split("/")[-1].split(".")[0], 
     True, 
     True, 
@@ -28,12 +28,12 @@ def execute(receive, sender, group):
     fileID = content["FileID"]
 
     if group: #判断是否是群聊
-        ret = postQQ("OidbSvc.0x6d6_2", json.dumps({
+        ret = postQQ("OidbSvc.0x6d6_2", dumps({
             "GroupID": receive["FromGroupId"],
             "FileID": fileID
         }))
     else:
-        ret = postQQ("OfflineFilleHandleSvr.pb_ftn_CMD_REQ_APPLY_DOWNLOAD-1200", json.dumps({
+        ret = postQQ("OfflineFilleHandleSvr.pb_ftn_CMD_REQ_APPLY_DOWNLOAD-1200", dumps({
             "FileID": fileID
         }))
 

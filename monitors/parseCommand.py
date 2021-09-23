@@ -1,13 +1,12 @@
 #模块特殊操作
 
 from public import helpException, parseException, getValue, sendMsg, readConfig
-import json
 
 #通用部分
 
 from public import monitorProperties, readConfig
 
-properties = monitorProperties(
+defaultProperties = monitorProperties(
      __file__.split("/")[-1].split(".")[0], 
     True, 
     True, 
@@ -23,7 +22,7 @@ properties = monitorProperties(
 def execute(receive, sender, group):
     commands = getValue("commandList")
     identifier = getValue("identifier")
-
+    
     temp = receive["Content"].strip() #获取消息，并去除头尾空格
     if temp.strip()[0] != identifier:
         return
@@ -33,8 +32,7 @@ def execute(receive, sender, group):
 
     try: #解析并执行指令
         if commandName in commands.keys():
-            with readConfig(["modules", "commands"], commandName) as r:
-                commandProperties = json.loads(r.readline())
+            commandProperties = readConfig(["modules", "commands"], commandName)
          
             if commandProperties["permittedUsers"] and sender not in commandProperties["permittedUsers"]:
                 result = "❌您没有执行指令 {}{} 的权限❌".format(identifier, commandName)

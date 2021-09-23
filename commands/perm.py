@@ -8,7 +8,7 @@ mappingTables = {"y": True, "n": False}
 from public import customParser, commandProperties
 from argparse import RawDescriptionHelpFormatter
 
-properties = commandProperties(
+defaultProperties = commandProperties(
      __file__.split("/")[-1].split(".")[0], 
     True, 
     True, 
@@ -27,7 +27,7 @@ properties = commandProperties(
 #执行指令
 
 def execute(receive, sender, group):
-    parser = customParser(prog = properties.progName, description = properties.description, epilog = customParser.get_epilog(properties.progName, properties.examples), formatter_class = RawDescriptionHelpFormatter)
+    parser = customParser(prog = defaultProperties.progName, description = defaultProperties.description, epilog = customParser.get_epilog(defaultProperties.progName, defaultProperties.examples), formatter_class = RawDescriptionHelpFormatter)
 
     parser.add_argument("-fa", "--friendAvailable", type = str, choices = mappingTables.keys(), help = "允许在好友私聊使用 [ %(type)s ]")
 

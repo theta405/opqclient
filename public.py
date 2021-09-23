@@ -1,6 +1,11 @@
-import importlib, json, requests
+import importlib
 from pathlib import Path
+from json import loads, dumps
+from requests import post
 from argparse import ArgumentParser
+
+GLOBAL_CONST = "globalConst"
+GLOBAL_VAR_RAW = "globalVarRaw"
 
 class customParser(ArgumentParser): #自定义 ArgumentParser 子类，覆盖原类的方法
     def error(self, message): #自定义出错处理
@@ -62,28 +67,29 @@ def getValue(name): #获取全局数值
     return dict(globalConst, **globalVar, **globalTemp)[name]
 
 def readConfig(configType, name): #读取设置，返回open对象
-    return open("{}/config/{}/{}.json".format(str(Path.cwd()), "/".join(configType), name), "r")
+    with open("config/{}/{}.json".format("/".join(configType), name), "r") as config:
+        return loads(config.readline())
 
-def saveConfig(configType, name, overwrite = True): #保存设置，返回open对象
-    folderPath = "{}/config/{}".format(str(Path.cwd()), "/".join(configType))
+def saveConfig(configType, name, data, key = None): #保存设置，返回open对象
+    folderPath = "config/{}".format("/".join(configType))
     if not Path(folderPath).exists(): #检测文件夹是否存在
         Path(folderPath).mkdir(parents = True)
-    return open("{}/{}.json".format(folderPath, name), "w{}".format("+" if overwrite else ""))
+    if key: #若只修改一个键的值
+        temp = data
+        data = readConfig(configType, name)
+        data[key] = temp
+    with open("{}/{}.json".format(folderPath, name), "w+") as config:
+        config.writelines([dumps(data, ensure_ascii = False)])
 
 def hasConfig(configType, name):
-    return Path("{}/config/{}/{}.json".format(str(Path.cwd()), "/".join(configType), name)).exists()
+    return Path("config/{}/{}.json".format("/".join(configType), name)).exists()
 
 def saveGlobals(): #保存全局数值
-    with saveConfig(["system"], "stash") as stash:
-        stash.writelines([
-            json.dumps(globalConst, ensure_ascii = False),
-            "\n",
-            json.dumps(globalVarRaw, ensure_ascii = False)
-        ])
+    saveConfig(["system"], "stash", {GLOBAL_CONST: globalConst, GLOBAL_VAR_RAW: globalVarRaw})
     
 def sendMsg(receiver, group, message): #发送消息
 		postQQ(
-		"SendMsgV2", json.dumps({
+		"SendMsgV2", dumps({
 			"ToUserUid": group if group else receiver,
 			"SendToType": 2 if group else 1,
 			"SendMsgType": "TextMsg",
@@ -91,29 +97,27 @@ def sendMsg(receiver, group, message): #发送消息
 		}))
 
 def postQQ(func, data): #发送请求
-	r = requests.post("http://localhost:{}/v1/LuaApiCaller?qq={}&funcname={}".format(getValue("port"), qq, func), data)
+	r = post("http://localhost:{}/v1/LuaApiCaller?qq={}&funcname={}".format(getValue("port"), qq, func), data)
 	r.encoding = "utf-8"
 	return r.json()
 
 def importModules(modulesName, modulesList = None): #导入模块
     modulesList = modulesList if modulesList else {}
-    for f in Path("{}/{}".format(workpath, modulesName)).rglob("*.py"): #获取监视目录下的模块
+    for f in Path("{}".format(modulesName)).rglob("*.py"): #获取监视目录下的模块
         spec = importlib.util.spec_from_file_location(f.stem, f)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         modulesList[f.stem] = module
         if not hasConfig(["modules", modulesName], f.stem): #若无已生成的配置文件
-            with saveConfig(["modules", modulesName], f.stem) as conf: #保存新的配置文件
-                conf.write(json.dumps(module.properties.__dict__, ensure_ascii = False))
+            saveConfig(["modules", modulesName], f.stem, module.defaultProperties.__dict__) #保存新的配置文件
     return modulesList
 
-with readConfig(["system"], "stash") as stash: #读取保存的全局数值
-    globalConst = json.loads(stash.readline())
-    globalVarRaw = json.loads(stash.readline()) #全局变量需要保留原始格式
-    globalVar = {k: eval(v) for k, v in globalVarRaw.items()}
-    globalTemp = {} #临时全局数值，不会保存
+stash = readConfig(["system"], "stash") #读取保存的全局数值
+globalConst = stash[GLOBAL_CONST]
+globalVarRaw = stash[GLOBAL_VAR_RAW] #全局变量需要保留原始格式
+globalVar = {k: eval(v) for k, v in globalVarRaw.items()}
+globalTemp = {} #临时全局数值，不会保存
 
-workpath = getValue("workpath") #获取当前目录
 para = getValue("para")
 qq = getValue("qq")
 
