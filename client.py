@@ -40,7 +40,6 @@ def OnGroupMsgs(message):
 
 @sio.on("OnFriendMsgs", namespace = "/") #接收到好友消息时
 def OnFriendMsgs(message):
-	print(message)
 	sender = message["CurrentPacket"]["Data"]["FromUin"] #获取发送人
 	if sender == qq: #检测是否为自己发送的消息
 		return
