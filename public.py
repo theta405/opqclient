@@ -93,7 +93,7 @@ def sendMsg(receiver, group, message): #发送消息
 			"ToUserUid": group if group else receiver,
 			"SendToType": 2 if group else 1,
 			"SendMsgType": "TextMsg",
-			"Content": "{}{}".format("[ATUSER({})]\n".format(receiver) if group else "", message) #回复群聊时@发送者
+			"Content": message
 		}))
 
 def postQQ(func, data): #发送请求
@@ -109,7 +109,7 @@ def importModules(modulesName, modulesList = None): #导入模块
         spec.loader.exec_module(module)
         modulesList[f.stem] = module
         if not hasConfig(["modules", modulesName], f.stem): #若无已生成的配置文件
-            saveConfig(["modules", modulesName], f.stem, module.defaultProperties.__dict__) #保存新的配置文件
+            saveConfig(["modules", modulesName], f.stem, module.defaultProperties.__dict__) #以默认配置保存新的配置文件
     return modulesList
 
 stash = readConfig(["system"], "stash") #读取保存的全局数值

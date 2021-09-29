@@ -28,8 +28,8 @@ def execute(receive, sender, group):
     parser.add_argument("year", type = int, help = "查询的年份 [ %(type)s ]")
 
     args = parser.parse_args(receive)
-
     year = args.year
+
     w = [52] * 7
     name = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
     w[date(year, 1, 1).weekday()] += 1

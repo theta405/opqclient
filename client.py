@@ -2,8 +2,6 @@ from socketio import Client
 from public import getValue, importModules, readConfig
 
 sio = Client() #定义变量
-commandList = getValue("commandList")
-identifier = getValue("identifier")
 qq = getValue("qq")
 
 monitorList = {} #监视模块列表
@@ -51,7 +49,7 @@ def OnEvents(message):
 
 def main(): #连接OPQBot
 	try:
-		sio.connect(url = "http://127.0.0.1:{}".format(getValue("port")), transports = ["websocket"])
+		sio.connect(url = "http://localhost:{}".format(getValue("port")), transports = ["websocket"])
 		sio.wait()
 	except:
 		pass
