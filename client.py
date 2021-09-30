@@ -1,15 +1,8 @@
 from socketio import Client
-from public import getValue, importModules, readConfig
+from public import getValue, readConfig
 
 sio = Client() #定义变量
 qq = getValue("qq")
-
-monitorList = {} #监视模块列表
-for m in importModules("monitors").values():
-	for key in m.defaultProperties.monitors:
-		if key not in monitorList: #检测键是否存在
-			monitorList[key] = []
-		monitorList[key].append(m)
 
 def parseMessage(message, sender, group = None):
 	def moduleAvailable(properties): #检测模组是否可用
@@ -20,6 +13,7 @@ def parseMessage(message, sender, group = None):
 			return False
 		return True
 
+	monitorList = getValue("monitorList") #每次执行时获取
 	data = message["CurrentPacket"]["Data"] #减少字典索引量
 	msgType = data["MsgType"] #获取消息类型
 	if msgType in monitorList: #消息类型是否在监视列表内

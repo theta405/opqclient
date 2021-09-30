@@ -30,3 +30,5 @@ def execute(receive, sender, group):
     args = parser.parse_args(receive)
 
     return "当前系统状态：\n\nCPU利用率：{}%".format(psutil.cpu_percent())
+
+#模块特殊函数

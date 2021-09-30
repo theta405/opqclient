@@ -13,7 +13,7 @@ class customParser(ArgumentParser): #自定义 ArgumentParser 子类，覆盖原
     def print_help(self, file = None): #自定义帮助
         raise helpException(self.format_help()[:-1]) #最后一个是换行符，裁掉
     def get_epilog(prog, examples): #根据接收数据生成 epilog
-        return "{}\n{}".format("例如：", "\n".join(["{}{} {}{}（{}）".format(getValue("identifier"), prog, _[0], " " if _[0] else "", _[1]) for _ in examples]))
+        return "{}\n{}".format("例如：", "\n".join(["{}{} {}{}（{}）".format(identifier, prog, _[0], " " if _[0] else "", _[1]) for _ in examples]))
 
 class helpException(Exception): #显示帮助
     pass
@@ -88,22 +88,22 @@ def saveGlobals(): #保存全局数值
     saveConfig(["system"], "stash", {GLOBAL_CONST: globalConst, GLOBAL_VAR_RAW: globalVarRaw})
     
 def sendMsg(receiver, group, message): #发送消息
-		postQQ(
-		"SendMsgV2", dumps({
-			"ToUserUid": group if group else receiver,
-			"SendToType": 2 if group else 1,
-			"SendMsgType": "TextMsg",
-			"Content": message
-		}))
+    postQQ(
+    "SendMsgV2", dumps({
+        "ToUserUid": group if group else receiver,
+        "SendToType": 2 if group else 1,
+        "SendMsgType": "TextMsg",
+        "Content": message
+    }))
 
 def postQQ(func, data): #发送请求
-	r = post("http://localhost:{}/v1/LuaApiCaller?qq={}&funcname={}".format(getValue("port"), qq, func), data)
+	r = post("http://localhost:{}/v1/LuaApiCaller?qq={}&funcname={}".format(port, qq, func), data)
 	r.encoding = "utf-8"
 	return r.json()
 
 def importModules(modulesName, modulesList = None): #导入模块
     modulesList = modulesList if modulesList else {}
-    for f in Path("{}".format(modulesName)).rglob("*.py"): #获取监视目录下的模块
+    for f in Path("{}".format(modulesName)).rglob("*.py"): #获取目录下的模块
         spec = importlib.util.spec_from_file_location(f.stem, f)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
@@ -118,9 +118,16 @@ globalVarRaw = stash[GLOBAL_VAR_RAW] #全局变量需要保留原始格式
 globalVar = {k: eval(v) for k, v in globalVarRaw.items()}
 globalTemp = {} #临时全局数值，不会保存
 
-para = getValue("para")
 qq = getValue("qq")
+port = getValue("port")
+identifier = getValue("identifier")
 
-commandList = importModules("commands") #导入指令
+monitorList = {} #监视模块列表
+for m in importModules("monitors").values():
+	for key in m.defaultProperties.monitors:
+		if key not in monitorList: #检测键是否存在
+			monitorList[key] = []
+		monitorList[key].append(m)
 
-setValue("temp", "commandList", commandList) #设置全局数值
+setValue("temp", "monitorList", monitorList) #导入监视模块并设置全局数值
+setValue("temp", "commandList", importModules("commands")) #导入指令模块并设置全局数值

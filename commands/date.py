@@ -36,3 +36,5 @@ def execute(receive, sender, group):
     w[date(year, 1, 2).weekday()] += (year % 4 == 0 and year % 100 != 0) or year % 400 == 0
 
     return "\n".join(["{} - {}".format(c[0], c[1]) for c in zip(name, w)])
+
+#模块特殊函数

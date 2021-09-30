@@ -2,20 +2,6 @@
 
 from public import getValue, readConfig
 
-def permitted(sender, group, properties):
-    if properties["permittedUsers"] and sender not in properties["permittedUsers"]:
-        return False
-    elif sender in properties["disabledUsers"]:
-        return False
-    elif group in properties["disabledGroups"]:
-        return False
-    elif group and not properties["groupAvailable"]:
-        return False
-    elif not group and not properties["friendAvailable"]:
-        return False
-    else:
-        return True
-
 #通用部分
 
 from public import customParser, commandProperties
@@ -52,3 +38,19 @@ def execute(receive, sender, group):
     for commandName in sorted(commands):
         result += "\n{}{}{}".format("" if not permission else "● " if permitted(sender, group, readConfig(["modules", "commands"], commandName)) else "○ ", identifier, commandName)
     return result + ("\n\n●：可使用  ○：不可使用" if permission else "")
+
+#模块特殊函数
+
+def permitted(sender, group, properties): #检查是否有权限执行
+    if properties["permittedUsers"] and sender not in properties["permittedUsers"]:
+        return False
+    elif sender in properties["disabledUsers"]:
+        return False
+    elif group in properties["disabledGroups"]:
+        return False
+    elif group and not properties["groupAvailable"]:
+        return False
+    elif not group and not properties["friendAvailable"]:
+        return False
+    else:
+        return True
