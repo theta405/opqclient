@@ -1,14 +1,12 @@
 #模块特殊操作
 
-from public import getValue, readConfig
-
 #通用部分
 
-from public import customParser, commandProperties
-from argparse import RawDescriptionHelpFormatter
+from public import customParser, commandProperties, getValue, readConfig
 
+progName =  __file__.split("/")[-1].split(".")[0]
 defaultProperties = commandProperties(
-     __file__.split("/")[-1].split(".")[0], 
+    progName, 
     True, 
     True, 
     [], 
@@ -24,12 +22,13 @@ defaultProperties = commandProperties(
 #执行指令
 
 def execute(receive, sender, group):
+    para = getValue("para")
     commands = getValue("commandList")
     identifier = getValue("identifier")
 
-    parser = customParser(prog = defaultProperties.progName, description = defaultProperties.description, epilog = customParser.get_epilog(defaultProperties.progName, defaultProperties.examples), formatter_class = RawDescriptionHelpFormatter)
+    parser = customParser(readConfig(["modules", "commands"], progName))
 
-    parser.add_argument("-p", "--permission", action = "store_true", help = "是否显示权限")
+    parser.add_argument("{}p".format(para), "{0}permission".format(para * 2), action = "store_true", help = "是否显示权限")
 
     args = parser.parse_args(receive)
     permission = args.permission

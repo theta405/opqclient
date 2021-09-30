@@ -26,14 +26,14 @@ def parseMessage(message, sender, group = None):
 def OnGroupMsgs(message):
 	sender = message["CurrentPacket"]["Data"]["FromUserId"] #获取发送人
 	group = message["CurrentPacket"]["Data"]["FromGroupId"] #获取群
-	if sender == qq: #检测是否为自己发送的消息
+	if sender == qq: #若为自己发送的消息则退出
 		return
 	parseMessage(message, sender, group) #解析消息
 
 @sio.on("OnFriendMsgs", namespace = "/") #接收到好友消息时
 def OnFriendMsgs(message):
 	sender = message["CurrentPacket"]["Data"]["FromUin"] #获取发送人
-	if sender == qq: #检测是否为自己发送的消息
+	if sender == qq: #若为自己发送的消息则退出
 		return
 	parseMessage(message, sender) #解析消息
 

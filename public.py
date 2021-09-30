@@ -2,17 +2,22 @@ import importlib
 from pathlib import Path
 from json import loads, dumps
 from requests import post
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 GLOBAL_CONST = "globalConst"
 GLOBAL_VAR_RAW = "globalVarRaw"
 
 class customParser(ArgumentParser): #自定义 ArgumentParser 子类，覆盖原类的方法
+    def __init__(self, properties = None, **args):
+        if properties: #若有属性则在初始化时带上
+            super().__init__(prog = properties["progName"], description = properties["description"], epilog = self.get_epilog(properties["progName"], properties["examples"]), formatter_class = RawDescriptionHelpFormatter, prefix_chars = getValue("para"), **args)
+        else:
+            super().__init__(prefix_chars = getValue("para"), **args)
     def error(self, message): #自定义出错处理
         raise parseException(message)
     def print_help(self, file = None): #自定义帮助
         raise helpException(self.format_help()[:-1]) #最后一个是换行符，裁掉
-    def get_epilog(prog, examples): #根据接收数据生成 epilog
+    def get_epilog(self, prog, examples): #根据接收数据生成 epilog
         return "{}\n{}".format("例如：", "\n".join(["{}{} {}{}（{}）".format(identifier, prog, _[0], " " if _[0] else "", _[1]) for _ in examples]))
 
 class helpException(Exception): #显示帮助
@@ -123,11 +128,14 @@ port = getValue("port")
 identifier = getValue("identifier")
 
 monitorList = {} #监视模块列表
-for m in importModules("monitors").values():
-	for key in m.defaultProperties.monitors:
-		if key not in monitorList: #检测键是否存在
-			monitorList[key] = []
-		monitorList[key].append(m)
+monitorNames = [] #监视模块名称列表
+for m, n in importModules("monitors").items():
+    monitorNames.append(m)
+    for key in n.defaultProperties.monitors:
+        if key not in monitorList: #检测键是否存在
+            monitorList[key] = []
+        monitorList[key].append(n)
 
 setValue("temp", "monitorList", monitorList) #导入监视模块并设置全局数值
+setValue("temp", "monitorNames", monitorNames) #导入监视模块的名称
 setValue("temp", "commandList", importModules("commands")) #导入指令模块并设置全局数值

@@ -1,1 +1,1 @@
-{"globalConst": {"identifier": ".", "para": "-", "qq": 2314799057, "port": 8888, "validGroups": [1044616741]}, "globalVarRaw": {"workpath": "str(Path.cwd())"}}
+{"globalConst": {"identifier": ".", "contIdentifier": "&", "para": "-", "qq": 2314799057, "port": 8888, "validGroups": [1044616741]}, "globalVarRaw": {"workpath": "str(Path.cwd())"}}

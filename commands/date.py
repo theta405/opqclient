@@ -4,11 +4,11 @@ from datetime import date
 
 #通用部分
 
-from public import customParser, commandProperties
-from argparse import RawDescriptionHelpFormatter
+from public import customParser, commandProperties, getValue, readConfig
 
+progName =  __file__.split("/")[-1].split(".")[0]
 defaultProperties = commandProperties(
-     __file__.split("/")[-1].split(".")[0], 
+    progName, 
     True, 
     True, 
     [], 
@@ -23,7 +23,8 @@ defaultProperties = commandProperties(
 #执行指令
 
 def execute(receive, sender, group):
-    parser = customParser(prog = defaultProperties.progName, description = defaultProperties.description, epilog = customParser.get_epilog(defaultProperties.progName, defaultProperties.examples), formatter_class = RawDescriptionHelpFormatter)
+    para = getValue("para")
+    parser = customParser(readConfig(["modules", "commands"], progName))
 
     parser.add_argument("year", type = int, help = "查询的年份 [ %(type)s ]")
 
