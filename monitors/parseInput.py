@@ -1,6 +1,6 @@
 #模块特殊操作
 
-from public import getValue, hasValue, sendMsg, setValue
+from public import getValue, getLock, sendMsg
 
 #通用部分
 
@@ -28,13 +28,11 @@ def execute(receive, sender, group, seq):
 
     content = temp[1:] #分割输入
 
-    if hasValue("{}-lock".format(sender)):
-        lock = getValue("{}-lock".format(sender))
-        if lock["data"]:
-            sendMsg(sender, group, "没有正在等待输入的指令模块")
+    lock = getLock(sender) #检测是否有挂起的输入
+    if not lock or not lock.alive:
+        sendMsg(sender, group, "🚫没有正在等待输入的指令模块🚫")
+    elif lock.alive: #若仍然有效
+        if group == lock.group:
+            lock.modify(content)
         else:
-            if sender == lock["sender"] and group == lock["group"]:
-                lock["data"] = content
-                setValue("temp", "{}-lock".format(sender), lock)
-            else:
-                sendMsg(sender, group, "不在同一群组或聊天中")
+            sendMsg(sender, group, "🚫不在同一群组或聊天中🚫")

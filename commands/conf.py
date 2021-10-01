@@ -60,7 +60,7 @@ def execute(receive, sender, group, seq): #执行指令
     if not checkConflict[0]:
         return parseArgs(args, getType(name))
     else:
-        sendMsg(sender, group, "存在多个 {} 模块，列出如下：\n[ {} ]\n\n当前结果已暂存".format(name, "、".join([_[0] for _ in checkConflict[1]])))
+        sendMsg(sender, group, "在以下位置存在多个 {} 模块：\n[ {} ]\n请手动指定模块".format(name, "、".join([_[0] for _ in checkConflict[1]])))
         sendMsg(sender, group, waitForReply(progName, seq, sender, group))
 
 #模块特殊函数
