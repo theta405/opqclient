@@ -4,7 +4,7 @@ from public import helpException, parseException, getValue, sendMsg, readConfig
 
 #通用部分
 
-from public import monitorProperties, readConfig
+from public import monitorProperties
 
 defaultProperties = monitorProperties(
      __file__.split("/")[-1].split(".")[0], 
@@ -19,7 +19,7 @@ defaultProperties = monitorProperties(
 
 #执行指令
 
-def execute(receive, sender, group):
+def execute(receive, sender, group, seq):
     commands = getValue("commandList")
     identifier = getValue("identifier")
     
@@ -45,7 +45,7 @@ def execute(receive, sender, group):
             elif not group and not commandProperties["friendAvailable"]:
                 result = "❌指令 {}{} 无法在好友聊天使用❌".format(identifier, commandName)
             else:
-                result = commands[commandName].execute(command[1:], sender, group) #解析并执行成功
+                result = commands[commandName].execute(command[1:], sender, group, seq) #解析并执行成功
                 
         else:
             result = "⚠指令无效，请检查输入⚠\n输入 {}list 以查看指令列表".format(identifier) #不在指令列表内
@@ -56,4 +56,5 @@ def execute(receive, sender, group):
     except Exception as e: #执行出粗
         result = "🚫指令执行出错，请检查输入🚫\n\n[ 指令名称 ]\n{2}\n\n[ 错误信息 ]\n{0}\n\n请输入 {1}{2} -h 查看用法".format(str(e), identifier, commandName)
 
-    sendMsg(sender, group, result)
+    if result:
+        sendMsg(sender, group, result)

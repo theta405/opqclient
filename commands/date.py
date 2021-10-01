@@ -20,13 +20,20 @@ defaultProperties = commandProperties(
     ]
 )
 
-#执行指令
+#指令解析器
 
-def execute(receive, sender, group):
+def getParser():
     para = getValue("para")
     parser = customParser(readConfig(["modules", "commands"], progName))
 
     parser.add_argument("year", type = int, help = "查询的年份 [ %(type)s ]")
+
+    return parser
+
+#执行指令
+
+def execute(receive, sender, group, seq): #执行指令
+    parser = getParser()
 
     args = parser.parse_args(receive)
     year = args.year

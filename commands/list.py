@@ -19,16 +19,23 @@ defaultProperties = commandProperties(
     ]
 )
 
-#执行指令
+#指令解析器
 
-def execute(receive, sender, group):
+def getParser():
     para = getValue("para")
-    commands = getValue("commandList")
-    identifier = getValue("identifier")
 
     parser = customParser(readConfig(["modules", "commands"], progName))
 
     parser.add_argument("{}p".format(para), "{0}permission".format(para * 2), action = "store_true", help = "是否显示权限")
+
+    return parser
+
+#执行部分
+
+def execute(receive, sender, group, seq): #执行指令
+    parser = getParser()
+    commands = getValue("commandList")
+    identifier = getValue("identifier")
 
     args = parser.parse_args(receive)
     permission = args.permission

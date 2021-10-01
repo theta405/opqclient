@@ -1,5 +1,6 @@
 #模块特殊操作
 
+from public import sendMsg, waitForReply
 onOffTables = {"y": True, "n": False, "Y": True, "N": False}
 actionsList = ["set", "remove"]
 
@@ -24,9 +25,9 @@ defaultProperties = commandProperties(
     ]
 )
 
-#执行指令
+#指令解析器
 
-def execute(receive, sender, group):
+def getParser():
     para = getValue("para")
     parser = customParser(readConfig(["modules", "commands"], progName))
 
@@ -46,13 +47,21 @@ def execute(receive, sender, group):
     subparser.add_parser("disabledUsers", aliases = ["du"], parents = [actionParser], help = "添加或移除禁用人员")
     subparser.add_parser("disabledGroups", aliases = ["dg"], parents = [actionParser], help = "添加或移除禁用群聊")
 
+    return parser
+
+#执行部分
+
+def execute(receive, sender, group, seq): #执行指令
+    parser = getParser()
+
     args = parser.parse_known_args(receive)
     name = args[0].name
     checkConflict = hasConflict(name)
     if not checkConflict[0]:
-        return parseArgs(args)
+        return parseArgs(args, getType(name))
     else:
-        return "存在多个 {} 模块，列出如下：\n[ {} ]\n\n当前结果已暂存".format(name, "、".join([_[0] for _ in checkConflict[1]]))
+        sendMsg(sender, group, "存在多个 {} 模块，列出如下：\n[ {} ]\n\n当前结果已暂存".format(name, "、".join([_[0] for _ in checkConflict[1]])))
+        sendMsg(sender, group, waitForReply(progName, seq, sender, group))
 
 #模块特殊函数
 
@@ -62,9 +71,9 @@ def getType(name):
     monitors = getValue("monitorNames")
 
     if name in commands:
-        checkList.append("commands")
+        checkList.append("command")
     if name in monitors:
-        checkList.append("monitors")
+        checkList.append("monitor")
 
     return checkList
 
@@ -72,9 +81,9 @@ def hasConflict(name):
     checkList = []
     
     for i in getType(name):
-        if i == "commands":
+        if i == "command":
             checkList.append(["指令", "c"])
-        if i == "monitors":
+        if i == "monitor":
             checkList.append(["监视", "m"])
     
     if len(checkList) >= 2:
@@ -82,5 +91,5 @@ def hasConflict(name):
     else:
         return [False, checkList]
 
-def parseArgs(args):
+def parseArgs(args, moduleType):
     pass

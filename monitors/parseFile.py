@@ -23,7 +23,7 @@ defaultProperties = monitorProperties(
 
 #执行指令
 
-def execute(receive, sender, group):
+def execute(receive, sender, group, seq):
     content = eval(receive["Content"]) #Content内的值是字符串，需转换为字典
     fileID = content["FileID"]
 

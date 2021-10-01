@@ -1,11 +1,16 @@
 import importlib
 from pathlib import Path
 from json import loads, dumps
+from time import sleep, time
 from requests import post
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 GLOBAL_CONST = "globalConst"
 GLOBAL_VAR_RAW = "globalVarRaw"
+WAIT_TIME = 300
+
+sendTime = 0
+sending = False
 
 class customParser(ArgumentParser): #自定义 ArgumentParser 子类，覆盖原类的方法
     def __init__(self, properties = None, **args):
@@ -68,14 +73,28 @@ def setValue(target, name, value): #设置全局数值
     if target != "temp":
         saveGlobals()
 
+def delValue(target, name): #删除全局数值
+    if target == "const":
+        del globalConst[name]
+    elif target == "var":
+        del globalVarRaw[name]
+        del globalVar[name]
+    elif target == "temp":
+        del globalTemp[name]
+    if target != "temp":
+        saveGlobals()
+
 def getValue(name): #获取全局数值
     return dict(globalConst, **globalVar, **globalTemp)[name]
 
-def readConfig(configType, name): #读取设置，返回open对象
+def hasValue(name): #检测是否有全局数值
+    return name in dict(globalConst, **globalVar, **globalTemp)
+
+def readConfig(configType, name): #读取设置
     with open("config/{}/{}.json".format("/".join(configType), name), "r") as config:
         return loads(config.readline())
 
-def saveConfig(configType, name, data, key = None): #保存设置，返回open对象
+def saveConfig(configType, name, data, key = None): #保存设置
     folderPath = "config/{}".format("/".join(configType))
     if not Path(folderPath).exists(): #检测文件夹是否存在
         Path(folderPath).mkdir(parents = True)
@@ -86,20 +105,49 @@ def saveConfig(configType, name, data, key = None): #保存设置，返回open�
     with open("{}/{}.json".format(folderPath, name), "w+") as config:
         config.writelines([dumps(data, ensure_ascii = False)])
 
+def waitForReply(source, seq, sender, group): #等待返回值
+    lockName = "{}-lock".format(sender)
+    def getLock(key): #获取暂存数值
+        return getValue(lockName)[key]
+
+    waitTime = getValue("waitTime")
+    current = 0
+    sendMsg(sender, group, "{} 正在等待输入，{} 分钟后失效".format(source, waitTime // 60))
+    setValue("temp", lockName, {"source": source, "seq": seq, "sender": sender, "group": group, "data": ""})
+
+    while current < waitTime:
+        if getLock("data") != "" and seq == getLock("seq") and group == getLock("group"):
+            return getLock("data")
+        elif seq != getLock("seq") or group != getLock("group"):
+            break
+        current += 1
+        sleep(1)
+
 def hasConfig(configType, name):
     return Path("config/{}/{}.json".format("/".join(configType), name)).exists()
 
 def saveGlobals(): #保存全局数值
     saveConfig(["system"], "stash", {GLOBAL_CONST: globalConst, GLOBAL_VAR_RAW: globalVarRaw})
     
-def sendMsg(receiver, group, message): #发送消息
-    postQQ(
-    "SendMsgV2", dumps({
-        "ToUserUid": group if group else receiver,
-        "SendToType": 2 if group else 1,
-        "SendMsgType": "TextMsg",
-        "Content": message
-    }))
+def sendMsg(receiver, group, message, msgList = []): #发送消息
+    global sendTime, sending
+    def send(receiver, group, message):
+        global sendTime
+        postQQ(
+        "SendMsgV2", dumps({
+            "ToUserUid": group if group else receiver,
+            "SendToType": 2 if group else 1,
+            "SendMsgType": "TextMsg",
+            "Content": message
+        }))
+        sendTime = time()
+    msgList.append({"receiver": receiver, "group": group, "message": message})
+    if not sending:
+        while msgList:
+            sending = True
+            if time() - sendTime > getValue("messagesDelay"):
+                send(**msgList.pop(0))
+                sending = False
 
 def postQQ(func, data): #发送请求
 	r = post("http://localhost:{}/v1/LuaApiCaller?qq={}&funcname={}".format(port, qq, func), data)

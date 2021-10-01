@@ -1,1 +1,0 @@
-{"progName": "perm", "friendAvailable": true, "groupAvailable": true, "permittedUsers": [], "disabledUsers": [], "disabledGroups": [], "description": "查询或修改指令、监视等模块的配置", "examples": [["test", "查询 .test 的当前配置"], ["test friendAvailable y", "允许 .test 在好友私聊使用"], ["test groupAvailable n", "禁止 .test 在群聊使用"], ["test fa n", "禁止 .test 在好友私聊使用（缩写版）"]]}

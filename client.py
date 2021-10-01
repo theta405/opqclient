@@ -16,11 +16,12 @@ def parseMessage(message, sender, group = None):
 	monitorList = getValue("monitorList") #每次执行时获取
 	data = message["CurrentPacket"]["Data"] #减少字典索引量
 	msgType = data["MsgType"] #获取消息类型
+	seq = data["MsgSeq"] #消息的唯一ID
 	if msgType in monitorList: #消息类型是否在监视列表内
 		for module in monitorList[msgType]: #遍历该类型消息下的所有监视模块
 			moduleProperties = readConfig(["modules", "monitors"], module.defaultProperties.progName) #读取当前监视模块的设置
 			if moduleAvailable(moduleProperties):
-				module.execute(data, sender, group) #根据消息类型执行对应的监视模块
+				module.execute(data, sender, group, seq) #根据消息类型执行对应的监视模块
 
 @sio.on("OnGroupMsgs", namespace="/") #接收到群消息时
 def OnGroupMsgs(message):
