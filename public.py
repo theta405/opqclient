@@ -1,9 +1,13 @@
+#导入库
+
 import importlib
 from pathlib import Path
 from json import loads, dumps
 from time import sleep, time
 from requests import post
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+
+#变量和常量
 
 GLOBAL_CONST = "globalConst"
 GLOBAL_VAR_RAW = "globalVarRaw"
@@ -12,16 +16,21 @@ WAIT_TIME = 300
 sendTime = 0
 sending = False
 
+#类
+
 class customParser(ArgumentParser): #自定义 ArgumentParser 子类，覆盖原类的方法
     def __init__(self, properties = None, **args):
         if properties: #若有属性则在初始化时带上
             super().__init__(prog = properties["progName"], description = properties["description"], epilog = self.get_epilog(properties["progName"], properties["examples"]), formatter_class = RawDescriptionHelpFormatter, prefix_chars = getValue("para"), **args)
         else:
             super().__init__(prefix_chars = getValue("para"), **args)
+
     def error(self, message): #自定义出错处理
         raise parseException(message)
+
     def print_help(self, file = None): #自定义帮助
         raise helpException(self.format_help()[:-1]) #最后一个是换行符，裁掉
+
     def get_epilog(self, prog, examples): #根据接收数据生成 epilog
         return "{}\n{}".format("例如：", "\n".join(["{}{} {}{}（{}）".format(identifier, prog, _[0], " " if _[0] else "", _[1]) for _ in examples]))
 
@@ -62,6 +71,24 @@ class repeatProperties(): #循环
         self.progName = progName #模块名称
         self.repeatInterval = repeatInterval #循环间隔
 
+class inputLock(): #获取输入时挂起进程的锁
+    def __init__(self, source, seq, sender, group):
+        self.source = source
+        self.seq = seq
+        self.sender = sender
+        self.group = group
+        self.data = ""
+        self.alive = True
+        setValue("temp", getLockName(self.sender), self) #初始化后直接设置
+
+    def disable(self):
+        self.alive = False
+
+    def modify(self, data):
+        self.data = data
+
+#全局数值操作
+
 def setValue(target, name, value): #设置全局数值
     if target == "const":
         globalConst[name] = value
@@ -90,6 +117,11 @@ def getValue(name): #获取全局数值
 def hasValue(name): #检测是否有全局数值
     return name in dict(globalConst, **globalVar, **globalTemp)
 
+#存取设置
+
+def hasConfig(configType, name):
+    return Path("config/{}/{}.json".format("/".join(configType), name)).exists()
+
 def readConfig(configType, name): #读取设置
     with open("config/{}/{}.json".format("/".join(configType), name), "r") as config:
         return loads(config.readline())
@@ -105,34 +137,46 @@ def saveConfig(configType, name, data, key = None): #保存设置
     with open("{}/{}.json".format(folderPath, name), "w+") as config:
         config.writelines([dumps(data, ensure_ascii = False)])
 
-def waitForReply(source, seq, sender, group): #等待返回值
-    lockName = "{}-lock".format(sender)
-    def getLock(key): #获取暂存数值
-        return getValue(lockName)[key]
-
-    waitTime = getValue("waitTime")
-    current = 0
-    sendMsg(sender, group, "{} 正在等待输入，{} 分钟后失效".format(source, waitTime // 60))
-    setValue("temp", lockName, {"source": source, "seq": seq, "sender": sender, "group": group, "data": ""})
-
-    while current < waitTime:
-        if getLock("data") != "" and seq == getLock("seq") and group == getLock("group"):
-            return getLock("data")
-        elif seq != getLock("seq") or group != getLock("group"):
-            break
-        current += 1
-        sleep(1)
-
-def hasConfig(configType, name):
-    return Path("config/{}/{}.json".format("/".join(configType), name)).exists()
-
 def saveGlobals(): #保存全局数值
     saveConfig(["system"], "stash", {GLOBAL_CONST: globalConst, GLOBAL_VAR_RAW: globalVarRaw})
-    
+
+#挂起等待回复
+
+def getLockName(sender):
+    return "{}-lock".format(sender)
+
+def getLock(sender): #获取暂存数值
+    lockName = getLockName(sender)
+    return getValue(lockName) if hasValue(lockName) else None
+
+def waitForReply(source, seq, sender, group): #等待返回值
+    waitTime = getValue("waitTime")
+    current = 0
+    sendMsg(sender, group, ">> {} 正在等待输入，{} 分钟后失效\n请以 {}内容 的形式输入".format(source, waitTime // 60, getValue("inputIdentifier")))
+    sendMsg(sender, group, "例如：{}test 会向模块输入\"test\"".format(getValue("inputIdentifier")))
+    lock = inputLock(source, seq, sender, group)
+
+    while current < waitTime: #超时自动退出
+        lock = getLock(sender)
+        if lock.data != "" and seq == lock.seq and group == lock.group: #判断是否在同一群组或聊天，且数据发生变化
+            lock.disable()
+            return lock.data
+        elif lock.data != "": #若已变更位置
+            return
+        current += 1
+        sleep(1)
+    lock.disable() #超时后取消
+
+#发送相关
+
+def postQQ(func, data): #发送请求
+	r = post("http://localhost:{}/v1/LuaApiCaller?qq={}&funcname={}".format(port, qq, func), data)
+	r.encoding = "utf-8"
+	return r.json()
+
 def sendMsg(receiver, group, message, msgList = []): #发送消息
     global sendTime, sending
     def send(receiver, group, message):
-        global sendTime
         postQQ(
         "SendMsgV2", dumps({
             "ToUserUid": group if group else receiver,
@@ -140,19 +184,19 @@ def sendMsg(receiver, group, message, msgList = []): #发送消息
             "SendMsgType": "TextMsg",
             "Content": message
         }))
-        sendTime = time()
-    msgList.append({"receiver": receiver, "group": group, "message": message})
+        return time()
+
+    if not message: #若消息为空则返回
+        return
+    msgList.append({"receiver": receiver, "group": group, "message": message}) #使用消息列表暂存消息，避免发送过快
     if not sending:
         while msgList:
             sending = True
             if time() - sendTime > getValue("messagesDelay"):
-                send(**msgList.pop(0))
+                sendTime = send(**msgList.pop(0))
                 sending = False
 
-def postQQ(func, data): #发送请求
-	r = post("http://localhost:{}/v1/LuaApiCaller?qq={}&funcname={}".format(port, qq, func), data)
-	r.encoding = "utf-8"
-	return r.json()
+#各种功能
 
 def importModules(modulesName, modulesList = None): #导入模块
     modulesList = modulesList if modulesList else {}
@@ -165,6 +209,23 @@ def importModules(modulesName, modulesList = None): #导入模块
             saveConfig(["modules", modulesName], f.stem, module.defaultProperties.__dict__) #以默认配置保存新的配置文件
     return modulesList
 
+def importMonitors():
+    monitorList = {} #监视模块列表
+    monitorNames = [] #监视模块名称列表
+    for m, n in importModules("monitors").items():
+        monitorNames.append(m)
+        for key in n.defaultProperties.monitors:
+            if key not in monitorList: #检测键是否存在
+                monitorList[key] = []
+            monitorList[key].append(n)
+    setValue("temp", "monitorList", monitorList) #导入监视模块并设置全局数值
+    setValue("temp", "monitorNames", monitorNames) #导入监视模块的名称
+
+def importCommands():
+    setValue("temp", "commandList", importModules("commands")) #导入指令模块并设置全局数值
+
+#初始化
+
 stash = readConfig(["system"], "stash") #读取保存的全局数值
 globalConst = stash[GLOBAL_CONST]
 globalVarRaw = stash[GLOBAL_VAR_RAW] #全局变量需要保留原始格式
@@ -175,15 +236,5 @@ qq = getValue("qq")
 port = getValue("port")
 identifier = getValue("identifier")
 
-monitorList = {} #监视模块列表
-monitorNames = [] #监视模块名称列表
-for m, n in importModules("monitors").items():
-    monitorNames.append(m)
-    for key in n.defaultProperties.monitors:
-        if key not in monitorList: #检测键是否存在
-            monitorList[key] = []
-        monitorList[key].append(n)
-
-setValue("temp", "monitorList", monitorList) #导入监视模块并设置全局数值
-setValue("temp", "monitorNames", monitorNames) #导入监视模块的名称
-setValue("temp", "commandList", importModules("commands")) #导入指令模块并设置全局数值
+importMonitors()
+importCommands()
