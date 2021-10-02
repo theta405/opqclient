@@ -7,18 +7,17 @@ from json import dumps
 
 #通用部分
 
-from public import monitorProperties
+from public import moduleProperties
 
-defaultProperties = monitorProperties(
-     __file__.split("/")[-1].split(".")[0], 
-    True, 
-    True, 
-    [], 
-    [], 
-    [
-        "FriendFileMsg",
-        "GroupFileMsg"
-    ]
+properties = moduleProperties(
+    __file__, 
+    {
+        "description": "进行文件处理", 
+        "monitors": [
+            "FriendFileMsg",
+            "GroupFileMsg"
+        ]
+    }
 )
 
 #执行指令

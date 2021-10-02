@@ -4,17 +4,16 @@ from public import getValue, getLock, sendMsg
 
 #通用部分
 
-from public import monitorProperties
+from public import moduleProperties
 
-defaultProperties = monitorProperties(
-     __file__.split("/")[-1].split(".")[0], 
-    True, 
-    True, 
-    [], 
-    [], 
-    [
-        "TextMsg"
-    ]
+properties = moduleProperties(
+    __file__, 
+    {
+        "description": "处理用户输入", 
+        "monitors": [
+            "TextMsg"
+        ]
+    }
 )
 
 #执行指令

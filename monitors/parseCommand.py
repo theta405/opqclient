@@ -1,23 +1,22 @@
 #模块特殊操作
 
-from public import helpException, parseException, getValue, sendMsg, readConfig
+from public import helpException, parseException, getValue, sendMsg
 
 #通用部分
 
-from public import monitorProperties
+from public import moduleProperties
 
-defaultProperties = monitorProperties(
-     __file__.split("/")[-1].split(".")[0], 
-    True, 
-    True, 
-    [], 
-    [], 
-    [
-        "TextMsg"
-    ]
+properties = moduleProperties(
+    __file__, 
+    {
+        "description": "获取消息并执行指令", 
+        "monitors": [
+            "TextMsg"
+        ]
+    }
 )
 
-#执行指令
+#执行指令s
 
 def execute(receive, sender, group, seq):
     commands = getValue("commandList")
@@ -32,7 +31,7 @@ def execute(receive, sender, group, seq):
 
     try: #解析并执行指令
         if commandName in commands.keys():
-            commandProperties = readConfig(["modules", "commands"], commandName)
+            commandProperties = commands[commandName].properties.getPermissions()
          
             if commandProperties["permittedUsers"] and sender not in commandProperties["permittedUsers"]:
                 result = "❌您没有执行指令 {}{} 的权限❌".format(identifier, commandName)
