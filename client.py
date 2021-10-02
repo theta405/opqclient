@@ -1,5 +1,5 @@
 from socketio import Client
-from public import getValue, readConfig
+from public import getValue
 
 sio = Client() #定义变量
 qq = getValue("qq")
@@ -19,8 +19,7 @@ def parseMessage(message, sender, group = None):
 	seq = data["MsgSeq"] #消息的唯一ID
 	if msgType in monitorList: #消息类型是否在监视列表内
 		for module in monitorList[msgType]: #遍历该类型消息下的所有监视模块
-			moduleProperties = readConfig(["modules", "monitors"], module.defaultProperties.progName) #读取当前监视模块的设置
-			if moduleAvailable(moduleProperties):
+			if moduleAvailable(module.properties.getPermissions()): #读取当前监视模块的设置
 				module.execute(data, sender, group, seq) #根据消息类型执行对应的监视模块
 
 @sio.on("OnGroupMsgs", namespace="/") #接收到群消息时

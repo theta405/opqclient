@@ -4,27 +4,23 @@ import psutil
 
 #通用部分
 
-from public import customParser, commandProperties, getValue, readConfig
+from public import customParser, moduleProperties, getValue
 
-progName =  __file__.split("/")[-1].split(".")[0]
-defaultProperties = commandProperties(
-    progName, 
-    True, 
-    True, 
-    [], 
-    [], 
-    [], 
-    "返回系统状态", 
-    [
-        ["", "返回当前CPU使用情况"]
-    ]
+properties = moduleProperties(
+    __file__, 
+    {
+        "description": "返回系统状态", 
+        "examples": [
+            ["", "返回当前CPU使用情况"]
+        ]
+    }
 )
 
 #指令解析器
 
 def getParser():
     para = getValue("para")
-    parser = customParser(readConfig(["modules", "commands"], progName))
+    parser = customParser(properties.getAttributes())
 
     #parser.add_argument("year", type = int, help = "查询的年份 [ %(type)s ]")
 

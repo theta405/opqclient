@@ -4,27 +4,23 @@ from datetime import date
 
 #通用部分
 
-from public import customParser, commandProperties, getValue, readConfig
+from public import customParser, moduleProperties, getValue
 
-progName =  __file__.split("/")[-1].split(".")[0]
-defaultProperties = commandProperties(
-    progName, 
-    True, 
-    True, 
-    [], 
-    [], 
-    [], 
-    "返回一年内周一到周日有几天", 
-    [
-        ["233", "返回233年的周一到周日有几天"]
-    ]
+properties = moduleProperties(
+    __file__, 
+    {
+        "description": "返回一年内周一到周日有几天", 
+        "examples": [
+            ["233", "返回233年的周一到周日有几天"]
+        ]
+    }
 )
 
 #指令解析器
 
 def getParser():
     para = getValue("para")
-    parser = customParser(readConfig(["modules", "commands"], progName))
+    parser = customParser(properties.getAttributes())
 
     parser.add_argument("year", type = int, help = "查询的年份 [ %(type)s ]")
 
