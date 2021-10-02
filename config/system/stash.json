@@ -1,1 +1,1 @@
-{"globalConst": {"identifier": ".", "inputIdentifier": "&", "para": "-", "waitTime": 300, "messagesDelay": 0.75, "qq": 2314799057, "port": 8888, "validGroups": [1044616741]}, "globalVarRaw": {"workpath": "str(Path.cwd())"}}
+{"identifier": ".", "inputIdentifier": "&", "para": "-", "onSign": "●", "offSign": "○", "waitTime": 300, "messagesDelay": 1, "qq": 2314799057, "port": 8888, "validGroups": [1044616741]}
