@@ -1,1 +1,1 @@
-{"progName": "info", "friendAvailable": true, "groupAvailable": true, "permittedUsers": [], "disabledUsers": [], "disabledGroups": [], "description": "返回系统状态", "examples": [["", "返回当前CPU使用情况"]]}
+{"attributes": {"description": "返回系统状态", "examples": [["", "返回当前CPU使用情况"]], "name": "info"}, "permissions": {"friendAvailable": true, "groupAvailable": true, "disabledUsers": [], "disabledGroups": [], "permittedUsers": []}}

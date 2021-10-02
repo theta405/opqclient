@@ -2,34 +2,41 @@
 
 from public import sendMsg, waitForReply
 onOffTables = {"y": True, "n": False, "Y": True, "N": False}
-actionsList = ["set", "remove"]
+actionsList = ["add", "remove"]
+conflictList = {"commands": ["指令", "c"], "monitors": ["监视", "m"]}
+onOffOptions = {
+    "friendAvailable": ["fa", "在好友私聊使用"],
+    "groupAvailable": ["ga", "在群聊使用"]
+}
+actionsOptions = {
+    "disabledUsers": ["du", "禁用人员"],
+    "disabledGroups": ["dg", "禁用群聊"],
+    "permittedUsers": ["pu", "授权用户"]
+}
+options = dict(onOffOptions, **actionsOptions)
 
 #通用部分
 
-from public import customParser, commandProperties, getValue, readConfig
+from public import customParser, moduleProperties, getValue
 
-progName =  __file__.split("/")[-1].split(".")[0]
-defaultProperties = commandProperties(
-    progName, 
-    True, 
-    True, 
-    [], 
-    [], 
-    [], 
-    "查询或修改指令、监视等模块的配置", 
-    [
-        ["test", "查询模块 test 的当前配置"],
-        ["test friendAvailable y", "允许模块 test 在好友私聊使用"],
-        ["test groupAvailable n", "禁止模块 test 在群聊使用"],
-        ["test fa n", "禁止模块 test 在好友私聊使用（缩写版）"]
-    ]
+properties = moduleProperties(
+    __file__, 
+    {
+        "description": "查询或修改指令、监视等模块的配置", 
+        "examples": [
+            ["test", "查询模块 test 的当前配置"],
+            ["test friendAvailable y", "允许模块 test 在好友私聊使用"],
+            ["test fa n", "禁止模块 test 在好友私聊使用（缩写版）"],
+            ["test du add 233", "禁止QQ号为 233 的用户使用模块 test"]
+        ]
+    }
 )
 
 #指令解析器
 
 def getParser():
     para = getValue("para")
-    parser = customParser(readConfig(["modules", "commands"], progName))
+    parser = customParser(properties.getAttributes())
 
     parser.add_argument("name", type = str, help = "查询或修改的模块名称 [ %(type)s ]")
 
@@ -42,10 +49,10 @@ def getParser():
 
     subparser = parser.add_subparsers(title = "可操作的选项", dest = "actionType") #添加子命令解析器，处理多参数的情况
     
-    subparser.add_parser("friendAvailable", aliases = ["fa"], parents = [onOffParser], help = "是否允许在好友私聊使用")
-    subparser.add_parser("groupAvailable", aliases = ["ga"], parents = [onOffParser], help = "是否允许在群聊使用")
-    subparser.add_parser("disabledUsers", aliases = ["du"], parents = [actionParser], help = "添加或移除禁用人员")
-    subparser.add_parser("disabledGroups", aliases = ["dg"], parents = [actionParser], help = "添加或移除禁用群聊")
+    for k, v in onOffOptions.items():
+        subparser.add_parser(k, aliases = [v[0]], parents = [onOffParser], help = v[1])
+    for k, v in actionsOptions.items():
+        subparser.add_parser(k, aliases = [v[0]], parents = [actionParser], help = v[1])
 
     return parser
 
@@ -57,39 +64,114 @@ def execute(receive, sender, group, seq): #执行指令
     args = parser.parse_known_args(receive)
     name = args[0].name
     checkConflict = hasConflict(name)
-    if not checkConflict[0]:
-        return parseArgs(args, getType(name))
-    else:
-        sendMsg(sender, group, "在以下位置存在多个 {} 模块：\n[ {} ]\n请手动指定模块".format(name, "、".join([_[0] for _ in checkConflict[1]])))
-        sendMsg(sender, group, waitForReply(progName, seq, sender, group))
+    if not checkConflict[1]:
+        return "❌没有找到 {} 模块❌".format(name)
+    elif not checkConflict[0]: #检测模块是否被多次定义
+        return parseArgs(parser, args, getType(name)[0])
+    else: #提示并等待输入
+        sendMsg(sender, group, "在以下位置存在多个 {} 模块：\n{}\n请手动指定模块".format(name, "、".join(["{} [{}]".format(_[0], _[1]) for _ in checkConflict[1]])))
+        sendMsg(sender, group, "例如：输入 {} 会指定为 {} 模块".format(checkConflict[1][0][1], checkConflict[1][0][0]))
+        while True: #判断输入是否有效
+            choice = getTypeFromAbbr(waitForReply(properties.moduleName, seq, sender, group))
+            if choice:
+                return parseArgs(parser, args, choice)
+            else:
+                sendMsg(sender, group, "⚠没有找到对应的位置，请重新输入⚠")
 
 #模块特殊函数
 
+def getInformation(properties): #格式化输出权限
+    onSign = getValue("onSign")
+    offSign = getValue("offSign")
+    result = "{}模块 {} 的当前属性如下：\n功能：{}".format(
+        conflictList[properties.moduleType][0],
+        properties.moduleName,
+        properties.getAttributes("description")
+    )
+
+    for k, v in properties.getPermissions().items():
+        if isinstance(v, bool): #判断v是布尔型还是列表
+            v = onSign if v else offSign
+        else:
+            v = "、".join([str(_) for _ in v]) if v else "无" #若列表内无数值则返回“无”
+        result += "\n> {}：{}".format(options[k][1], v)
+
+    return result + "\n\n{}：可使用  {}：不可使用".format(onSign, offSign)
+
 def getType(name):
     checkList = []
-    commands = getValue("commandList").keys()
+    commands = getValue("commandList")
     monitors = getValue("monitorNames")
 
     if name in commands:
-        checkList.append("command")
+        checkList.append("commands")
     if name in monitors:
-        checkList.append("monitor")
+        checkList.append("monitors")
 
     return checkList
 
-def hasConflict(name):
+def getTypeFromAbbr(abbr): #根据缩写指定类型
+    for k, v in conflictList.items():
+        if abbr == v[1]:
+            return k
+
+def hasConflict(name): #是否被多次定义
     checkList = []
     
     for i in getType(name):
-        if i == "command":
-            checkList.append(["指令", "c"])
-        if i == "monitor":
-            checkList.append(["监视", "m"])
+        checkList.append(conflictList[i])
     
     if len(checkList) >= 2:
         return [True, checkList]
     else:
         return [False, checkList]
 
-def parseArgs(args, moduleType):
-    pass
+def parseArgs(parser, args, moduleType): #解析参数
+    def parse(): #解析后执行
+        actionType = args[0].actionType
+        if not actionType in options: #从缩写获取完整的actionType
+            for k, v in options.items():
+                if actionType == v[0]:
+                    actionType = k
+        permission = properties.getPermissions(actionType)
+        if actionType in onOffOptions:
+            status = onOffTables[args[0].status]
+            if status == permission:
+                result = "[ {} ] 已经为 {} ，无需修改".format(options[actionType][1], onSign if status else offSign)
+            else:
+                properties.setPermission(actionType, status)
+                result = "已将 [ {} ] 设为 {}".format(options[actionType][1], onSign if status else offSign)
+        else:
+            targetId = args[0].id
+            if args[0].action == "add":
+                if targetId in permission:
+                    result = "{} 已在 [ {} ] 中，无需添加".format(targetId, options[actionType][1])
+                else:
+                    permission.append(targetId)
+                    result = "已将 {} 添加至 [ {} ] 中".format(targetId, options[actionType][1])
+            else:
+                if targetId in permission:
+                    permission.pop(permission.index(targetId))
+                    result = "已将 {} 从 [ {} ] 中删除".format(targetId, options[actionType][1])
+                else:
+                    result = "{} 不在 [ {} ] 中，无需删除".format(targetId, options[actionType][1])
+            properties.setPermission(actionType, permission)
+        return result
+
+    commands = getValue("commandList")
+    monitors = getValue("monitorNames")
+    onSign = getValue("onSign")
+    offSign = getValue("offSign")
+    name = args[0].name
+    properties = eval(moduleType)[name].properties
+    result = "执行结果：\n"
+
+    if not args[0].actionType:
+        return getInformation(properties)
+    else:
+        while True:
+            result += "> {}\n".format(parse())
+            if not args[1]:
+                return result + "\n" + getInformation(properties)
+            args = parser.parse_known_args([name] + args[1])
+    

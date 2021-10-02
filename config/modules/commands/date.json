@@ -1,1 +1,1 @@
-{"progName": "date", "friendAvailable": true, "groupAvailable": true, "permittedUsers": [], "disabledUsers": [], "disabledGroups": [], "description": "返回一年内周一到周日有几天", "examples": [["233", "返回233年的周一到周日有几天"]]}
+{"attributes": {"description": "返回一年内周一到周日有几天", "examples": [["233", "返回233年的周一到周日有几天"]], "name": "date"}, "permissions": {"friendAvailable": true, "groupAvailable": true, "disabledUsers": [], "disabledGroups": [], "permittedUsers": []}}

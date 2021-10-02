@@ -1,1 +1,1 @@
-{"progName": "parseFile", "friendAvailable": true, "groupAvailable": true, "disabledUsers": [], "disabledGroups": [], "monitors": ["FriendFileMsg", "GroupFileMsg"]}
+{"attributes": {"description": "进行文件处理", "monitors": ["FriendFileMsg", "GroupFileMsg"], "name": "parseFile"}, "permissions": {"friendAvailable": true, "groupAvailable": true, "disabledUsers": [], "disabledGroups": [], "permittedUsers": []}}

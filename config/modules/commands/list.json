@@ -1,1 +1,1 @@
-{"progName": "list", "friendAvailable": true, "groupAvailable": true, "permittedUsers": [], "disabledUsers": [], "disabledGroups": [], "description": "查询全部指令", "examples": [["", "返回全部指令"], ["-p", "返回全部指令，并标示权限"]]}
+{"attributes": {"description": "查询全部指令", "examples": [["", "返回全部指令"], ["-p", "返回全部指令，并标示权限"]], "name": "list"}, "permissions": {"friendAvailable": true, "groupAvailable": true, "disabledUsers": [], "disabledGroups": [], "permittedUsers": []}}

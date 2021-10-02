@@ -1,1 +1,1 @@
-{"progName": "parseInput", "friendAvailable": true, "groupAvailable": true, "disabledUsers": [], "disabledGroups": [], "monitors": ["TextMsg"]}
+{"attributes": {"description": "处理用户输入", "monitors": ["TextMsg"], "name": "parseInput"}, "permissions": {"friendAvailable": true, "groupAvailable": true, "disabledUsers": [], "disabledGroups": [], "permittedUsers": []}}
