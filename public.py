@@ -14,7 +14,6 @@ globalVar, globalTemp = {}, {}
 WAIT_TIME = 300
 
 sendTime = 0
-sending = False
 
 #类
 
@@ -135,10 +134,8 @@ def saveConfig(configType, name, data, key = None): #保存设置
         config.writelines([dumps(data, ensure_ascii = False)])
 
 def getGlobals(): #读取全局数值
-    global globalVar, globalTemp
-
+    global globalVar
     globalVar = readConfig(["system"], "stash") #读取保存的全局数值
-    globalTemp = globalTemp if globalTemp else {} #临时全局数值，不会保存
 
 def saveGlobals(): #保存全局数值
     saveConfig(["system"], "stash", globalVar)
@@ -153,22 +150,25 @@ def getLock(sender): #获取暂存数值
     return getValue(lockName) if hasValue(lockName) else None
 
 def waitForReply(source, seq, sender, group): #等待返回值
+    def wait():
+        current = 0
+        lock = inputLock(source, seq, sender, group)
+        while current < waitTime: #超时自动退出
+            lock = getLock(sender)
+            if lock.data != "" and seq == lock.seq and group == lock.group: #判断是否在同一群组或聊天，且数据发生变化
+                lock.disable()
+                return lock.data
+            elif lock.data != "": #若已变更位置
+                return
+            current += 1
+            sleep(1)
+        lock.disable() #超时后取消
+
     waitTime = getValue("waitTime")
-    current = 0
     sendMsg(sender, group, "> {} 正在等待输入，{} 分钟后失效\n请以 {}内容 的形式输入".format(source, waitTime // 60, getValue("inputIdentifier")))
     sendMsg(sender, group, "例如：{}test 会向模块输入\"test\"".format(getValue("inputIdentifier")))
-    lock = inputLock(source, seq, sender, group)
 
-    while current < waitTime: #超时自动退出
-        lock = getLock(sender)
-        if lock.data != "" and seq == lock.seq and group == lock.group: #判断是否在同一群组或聊天，且数据发生变化
-            lock.disable()
-            return lock.data
-        elif lock.data != "": #若已变更位置
-            return
-        current += 1
-        sleep(1)
-    lock.disable() #超时后取消
+    return wait()
 
 #发送相关
 
@@ -177,9 +177,15 @@ def postQQ(func, data): #发送请求
 	r.encoding = "utf-8"
 	return r.json()
 
-def sendMsg(receiver, group, message, msgList = []): #发送消息
-    global sendTime, sending
-    def send(receiver, group, message):
+def sendMsg(receiver, group, message): #发送消息
+    global sendTime
+    if not message: #若消息为空则返回
+        return
+    if receiver == getValue("console"): #若从控制台输入指令
+        print("\r{}".format(message), end = "\n> ") #确保每次都是最后一条输出后带">"
+    else:
+        while time() - sendTime < getValue("messagesDelay"): #等待上一条消息发完
+            pass
         postQQ(
         "SendMsgV2", dumps({
             "ToUserUid": group if group else receiver,
@@ -187,17 +193,7 @@ def sendMsg(receiver, group, message, msgList = []): #发送消息
             "SendMsgType": "TextMsg",
             "Content": message
         }))
-        return time()
-
-    if not message: #若消息为空则返回
-        return
-    msgList.append({"receiver": receiver, "group": group, "message": message}) #使用消息列表暂存消息，避免发送过快
-    if not sending:
-        while msgList:
-            sending = True
-            if time() - sendTime > getValue("messagesDelay"):
-                sendTime = send(**msgList.pop(0))
-                sending = False
+        sendTime =  time()
 
 #各种功能
 
