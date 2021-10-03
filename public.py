@@ -81,7 +81,7 @@ class moduleProperties(): #模块的属性
         temp["permissions"][key] = value
         saveConfig(["modules", self.moduleType], self.moduleName, temp)
 
-class inputLock(): #获取输入时挂起进程的锁
+class inputPend(): #获取输入时挂起进程的锁
     def __init__(self, source, seq, sender, group):
         self.source = source
         self.seq = seq
@@ -89,7 +89,7 @@ class inputLock(): #获取输入时挂起进程的锁
         self.group = group
         self.data = ""
         self.alive = True
-        setTemp(getLockName(self.sender), self) #初始化后直接设置
+        setTemp(getPendName(self.sender), self) #初始化后直接设置
 
     def disable(self):
         self.alive = False
@@ -142,27 +142,27 @@ def saveGlobals(): #保存全局数值
 
 #挂起等待回复
 
-def getLockName(sender):
-    return "{}-lock".format(sender)
+def getPendName(sender):
+    return "{}-pend".format(sender)
 
-def getLock(sender): #获取暂存数值
-    lockName = getLockName(sender)
-    return getValue(lockName) if hasValue(lockName) else None
+def getPend(sender): #获取暂存数值
+    pendName = getPendName(sender)
+    return getValue(pendName) if hasValue(pendName) else None
 
 def waitForReply(source, seq, sender, group): #等待返回值
     def wait():
         current = 0
-        lock = inputLock(source, seq, sender, group)
+        pend = inputPend(source, seq, sender, group)
         while current < waitTime: #超时自动退出
-            lock = getLock(sender)
-            if lock.data != "" and seq == lock.seq and group == lock.group: #判断是否在同一群组或聊天，且数据发生变化
-                lock.disable()
-                return lock.data
-            elif lock.data != "": #若已变更位置
+            pend = getPend(sender)
+            if pend.data != "" and seq == pend.seq and group == pend.group: #判断是否在同一群组或聊天，且数据发生变化
+                pend.disable()
+                return pend.data
+            elif pend.data != "": #若已变更位置
                 return
             current += 1
             sleep(1)
-        lock.disable() #超时后取消
+        pend.disable() #超时后取消
 
     waitTime = getValue("waitTime")
     sendMsg(sender, group, "> {} 正在等待输入，{} 分钟后失效\n请以 {}内容 的形式输入".format(source, waitTime // 60, getValue("inputIdentifier")))
