@@ -75,6 +75,8 @@ def execute(receive, sender, group, seq): #执行指令
             choice = getTypeFromAbbr(waitForReply(properties.moduleName, seq, sender, group))
             if choice:
                 return parseArgs(parser, args, choice)
+            elif choice == None: #若超时则终止
+                return
             else:
                 sendMsg(sender, group, "⚠没有找到对应的位置，请重新输入⚠")
 
