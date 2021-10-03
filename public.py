@@ -136,6 +136,7 @@ def saveConfig(configType, name, data, key = None): #保存设置
 def getGlobals(): #读取全局数值
     global globalVar
     globalVar = readConfig(["system"], "stash") #读取保存的全局数值
+    setTemp("cmdPrompt", "[{}]$ ".format(getValue("qq")))
 
 def saveGlobals(): #保存全局数值
     saveConfig(["system"], "stash", globalVar)
@@ -182,7 +183,11 @@ def sendMsg(receiver, group, message): #发送消息
     if not message: #若消息为空则返回
         return
     if receiver == getValue("console"): #若从控制台输入指令
-        print("\r{}".format(message), end = "\n> ") #确保每次都是最后一条输出后带">"
+        cmdPrompt = getValue("cmdPrompt")
+        message = message.split("\n")
+        if len(message[0]) < len(cmdPrompt): #若首行长度不足以覆盖cmdPrompt
+            message[0] = "{:<{}}".format(message[0], len(cmdPrompt)) #格式化字符串，使其增加长度
+        print("\r{}".format("\n".join(message)), end = "\n{}".format(cmdPrompt)) #确保每次都是最后一条输出后带cmdPrompt
     else:
         while time() - sendTime < getValue("messagesDelay"): #等待上一条消息发完
             pass

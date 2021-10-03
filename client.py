@@ -63,7 +63,7 @@ def connect(): #连接机器人
 			sio.connect(url = "http://localhost:{}".format(getValue("port")), transports = ["websocket"])
 			print("{}已连接QQ机器人".format("" if i == None else "\n"))
 			while True:
-				parseMessage(input("\r> "), console, seq = seq) #命令行输入
+				parseMessage(input("\r{}".format(getValue("cmdPrompt"))), console, seq = seq) #命令行输入
 				seq += 1
 		except KeyboardInterrupt: #若从控制台终止
 			exit()
