@@ -36,4 +36,6 @@ def execute(receive, sender, group, seq):
             "FileID": fileID
         }))
 
-    sendMsg(sender, group, "接收到文件：{}\n文件URL：{}".format(content["FileName"], ret["Url"]))
+    sendMsg(sender, group, "接收到文件：{}\n下载中……".format(content["FileName"]))
+    urlretrieve(ret["Url"], content["FileName"])
+    sendMsg(sender, group, "下载完成")
