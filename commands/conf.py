@@ -65,21 +65,22 @@ def execute(receive, sender, group, seq): #执行指令
     args = parser.parse_known_args(receive)
     name = args[0].name
     check = checkModule(name)
-    if not check[1]: #检查列表为空
+    if not check: #检查列表为空
         return "❌没有找到 {} 模块❌".format(name)
-    # elif not check[0]: #检测模块是否被多次定义
-    #     return parseArgs(parser, args, check[1][0])
-    else: #提示并等待输入
-        sendMsg(sender, group, "在以下位置存在多个 {} 模块：\n{}\n请手动指定模块".format(name, "、".join(["{} [{}]".format(conflictList[_][0], conflictList[_][1]) for _ in check[1]])))
+    elif len(check) > 1: #检测模块是否被多次定义
+        foundList = [[_] + [_ for _ in conflictList[_]] for _ in check]
+        sendMsg(sender, group, "在以下位置存在多个 {} 模块：\n{}\n请手动指定模块".format(name, "、".join(["{} [{}]".format(_[1], _[2]) for _ in foundList])))
         while True: #判断输入是否有效
-            choice = waitForReply(properties.moduleName, seq, sender, group, [conflictList[check[1][0]][1], "指定为{}".format(conflictList[check[1][0]][0])])
+            choice = waitForReply(properties.moduleName, seq, sender, group, [foundList[0][2], "指定为{}".format(foundList[0][1])]) #提示并等待输入
             if choice == None: #若超时则终止
                 return
-            choice = getTypeFromAbbr(choice, [(_, conflictList[_][1]) for _ in check[1]])
-            if choice:
+            choice = getTypeFromAbbr(choice, {_[2]: _[0] for _ in foundList})
+            if choice: #若有匹配项
                 return parseArgs(parser, args, choice)
             else:
                 sendMsg(sender, group, "⚠没有找到对应的位置，请重新输入⚠")
+    else: #只有一个模块
+        return parseArgs(parser, args, check[0])
 
 #模块特殊函数
 
@@ -102,10 +103,7 @@ def getInformation(properties): #格式化输出权限
     return result + "\n\n{}：可使用  {}：不可使用".format(onSign, offSign)
 
 def getTypeFromAbbr(abbr, found): #根据缩写指定类型
-    for i in found:
-        if abbr == i[1]:
-            return i[0]
-    return False
+    return found[abbr] if abbr in found else False
 
 def checkModule(name): #是否被多次定义
     checkList = []
@@ -117,7 +115,7 @@ def checkModule(name): #是否被多次定义
     if name in monitors:
         checkList.append("monitors")
     
-    return [len(checkList) >= 2, checkList]
+    return checkList
 
 def parseArgs(parser, args, moduleType): #解析参数
     def parse(): #解析后执行

@@ -1,7 +1,6 @@
 #模块特殊操作
 
 from urllib.request import urlretrieve #下载文件
-from threading import Thread #多线程
 from public import sendMsg, postQQ
 from json import dumps
 
