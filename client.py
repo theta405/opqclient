@@ -69,7 +69,7 @@ def connect(): #连接机器人
 			exit()
 		except: #若连接失败则等待，同时在控制台输出文本
 			i = not i
-			print("\r正在连接QQ机器人 {}\r".format(onSign if i else offSign), end = "")
+			print("\r正在连接QQ机器人 {}".format(onSign if i else offSign), end = "")
 			sleep(1)
 
 if __name__ == "__main__":

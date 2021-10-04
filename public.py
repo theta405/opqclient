@@ -150,24 +150,23 @@ def getPend(sender): #获取暂存数值
     pendName = getPendName(sender)
     return getValue(pendName) if hasValue(pendName) else None
 
-def waitForReply(source, seq, sender, group): #等待返回值
+def waitForReply(source, seq, sender, group, prompt = None): #等待返回值
     def wait():
-        current = 0
         pend = inputPend(source, seq, sender, group)
-        while current < waitTime: #超时自动退出
+        for _ in range(waitTime): #超时自动退出
             pend = getPend(sender)
             if pend.data != "" and seq == pend.seq and group == pend.group: #判断是否在同一群组或聊天，且数据发生变化
                 pend.disable()
                 return pend.data
             elif pend.data != "": #若已变更位置
                 return
-            current += 1
             sleep(1)
         pend.disable() #超时后取消
 
     waitTime = getValue("waitTime")
     sendMsg(sender, group, "> {} 正在等待输入，{} 分钟后失效\n请以 {}内容 的形式输入".format(source, waitTime // 60, getValue("inputIdentifier")))
-    sendMsg(sender, group, "例如：{}test 会向模块输入\"test\"".format(getValue("inputIdentifier")))
+    if prompt:
+        sendMsg(sender, group, "例如：{}{} 会{}".format(getValue("inputIdentifier"), prompt[0], prompt[1]))
 
     return wait()
 
