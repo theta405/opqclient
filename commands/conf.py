@@ -27,7 +27,8 @@ properties = moduleProperties(
             ["test", "查询模块 test 的当前配置"],
             ["test friendAvailable y", "允许模块 test 在好友私聊使用"],
             ["test fa n", "禁止模块 test 在好友私聊使用（缩写版）"],
-            ["test du add 233", "禁止QQ号为 233 的用户使用模块 test"]
+            ["test du add 233", "禁止QQ号为 233 的用户使用模块 test"],
+            ["test du remove 233", "允许QQ号为 233 的用户使用模块 test"],
         ]
     }
 )
@@ -66,17 +67,17 @@ def execute(receive, sender, group, seq): #执行指令
     check = checkModule(name)
     if not check[1]: #检查列表为空
         return "❌没有找到 {} 模块❌".format(name)
-    elif not check[0]: #检测模块是否被多次定义
-        return parseArgs(parser, args, check[1][0])
+    # elif not check[0]: #检测模块是否被多次定义
+    #     return parseArgs(parser, args, check[1][0])
     else: #提示并等待输入
         sendMsg(sender, group, "在以下位置存在多个 {} 模块：\n{}\n请手动指定模块".format(name, "、".join(["{} [{}]".format(conflictList[_][0], conflictList[_][1]) for _ in check[1]])))
-        sendMsg(sender, group, "例如：输入 {} 会指定为 {} 模块".format(conflictList[check[1][0]][1], conflictList[check[1][0]][0]))
         while True: #判断输入是否有效
-            choice = getTypeFromAbbr(waitForReply(properties.moduleName, seq, sender, group))
+            choice = waitForReply(properties.moduleName, seq, sender, group, [conflictList[check[1][0]][1], "指定为{}".format(conflictList[check[1][0]][0])])
+            if choice == None: #若超时则终止
+                return
+            choice = getTypeFromAbbr(choice, [(_, conflictList[_][1]) for _ in check[1]])
             if choice:
                 return parseArgs(parser, args, choice)
-            elif choice == None: #若超时则终止
-                return
             else:
                 sendMsg(sender, group, "⚠没有找到对应的位置，请重新输入⚠")
 
@@ -100,10 +101,11 @@ def getInformation(properties): #格式化输出权限
 
     return result + "\n\n{}：可使用  {}：不可使用".format(onSign, offSign)
 
-def getTypeFromAbbr(abbr): #根据缩写指定类型
-    for k, v in conflictList.items():
-        if abbr == v[1]:
-            return k
+def getTypeFromAbbr(abbr, found): #根据缩写指定类型
+    for i in found:
+        if abbr == i[1]:
+            return i[0]
+    return False
 
 def checkModule(name): #是否被多次定义
     checkList = []
