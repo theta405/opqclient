@@ -6,7 +6,6 @@ from threading import Thread
 
 sio = Client() #定义变量
 qq = getValue("qq")
-signTable = getValue("signTable")
 console = getValue("console")
 
 def parseMessage(message, sender, group = None, seq = None):
@@ -69,7 +68,7 @@ def connect(): #连接机器人
 			exit()
 		except ConnectionError: #若连接失败则等待，同时在控制台输出文本
 			i = not i
-			print("\r正在连接QQ机器人 {}".format(signTable[i]), end = "")
+			print("\r正在连接QQ机器人 {}".format(getValue("signTable")[i]), end = "")
 			sleep(1)
 
 if __name__ == "__main__":

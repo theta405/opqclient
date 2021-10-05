@@ -9,7 +9,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 #变量和常量
 
-globalVar, globalTemp = {}, {}
+globalTemp = {}
 
 WAIT_TIME = 300
 
@@ -31,7 +31,7 @@ class customParser(ArgumentParser): #自定义 ArgumentParser 子类，覆盖原
         raise helpException(self.format_help()[:-1]) #最后一个是换行符，裁掉
 
     def get_epilog(self, name, examples): #根据接收数据生成 epilog
-        return "{}\n{}".format("例如：", "\n".join(["{}{} {}{}（{}）".format(getValue("identifier"), name, _[0], " " if _[0] else "", _[1]) for _ in examples]))
+        return "例如：\n{}".format("\n".join(["{}{} {}{}（{}）".format(getValue("identifier"), name, _[0], " " if _[0] else "", _[1]) for _ in examples]))
 
 class helpException(Exception): pass #显示帮助
 
@@ -102,18 +102,16 @@ class inputPend(): #获取输入时挂起进程的锁
 #全局数值操作
 
 def setVar(name, value): #设置全局数值
-    globalVar[name] = value
-    saveGlobals()
+    saveConfig(["system"], "stash", value, [name])
 
 def setTemp(name, value):
     globalTemp[name] = value
-    saveGlobals()
 
 def getValue(name): #获取全局数值
-    return dict(globalVar, **globalTemp)[name]
+    return dict(readConfig(["system"], "stash"), **globalTemp)[name]
 
 def hasValue(name): #检测是否有全局数值
-    return name in dict(globalVar, **globalTemp)
+    return name in dict(readConfig(["system"], "stash"), **globalTemp)
 
 #存取设置
 
@@ -123,33 +121,28 @@ def hasConfig(configType, name):
 def readConfig(configType, name, key = []): #读取设置
     keys = "".join(["['{}']".format(_) for _ in key if _ != None]) #若键值为None则跳过
     with open("config/{}/{}.json".format("/".join(configType), name), "r") as config:
-        return eval("loads(config.readline()){}".format(keys)) if key else loads(config.readline())
+        return eval(f"loads(config.readline()){keys}")
 
 def saveConfig(configType, name, data, key = []): #保存设置
     folderPath = "config/{}".format("/".join(configType))
     if not Path(folderPath).exists(): #检测文件夹是否存在
         Path(folderPath).mkdir(parents = True)
     if key: #若只修改一个键的值
-        keys = "".join(["['{}']".format(_) for _ in key if _ != None]) #若键值为None则跳过
+        keys = "".join([f"['{_}']" for _ in key if _ != None]) #若键值为None则跳过
         temp = readConfig(configType, name)
-        exec("temp{} = data".format(keys)) #解决多索引的问题
+        exec(f"temp{keys} = data") #解决多索引的问题
         data = temp
-    with open("{}/{}.json".format(folderPath, name), "w+") as config:
+    with open(f"{folderPath}/{name}.json", "w+") as config:
         config.writelines([dumps(data, ensure_ascii = False)])
 
-def getGlobals(): #读取全局数值
-    global globalVar
-    globalVar = readConfig(["system"], "stash") #读取保存的全局数值
+def setTemps(): #读取全局数值
     setTemp("cmdPrompt", "[{}]$ ".format(getValue("qq"))) #命令行提示符
     setTemp("signTable", {True: getValue("onSign"), False: getValue("offSign")}) #标记映射表
-
-def saveGlobals(): #保存全局数值
-    saveConfig(["system"], "stash", globalVar)
 
 #挂起等待回复
 
 def getPendName(sender):
-    return "{}-pend".format(sender)
+    return f"{sender}-pend"
 
 def getPend(sender): #获取挂起类
     pendName = getPendName(sender)
@@ -166,7 +159,7 @@ def waitForReply(source, seq, sender, group, prompt = None): #等待返回值
         pend = inputPend(source, seq, sender, group)
     sendMsg(sender, group, "{}> {} 正在等待输入，{} 分钟后失效\n请以 {}内容 的形式输入".format("⚠上一个等待输入的模块已失效⚠\n" if alive else "", source, waitTime // 60, getValue("inputIdentifier")))
     if prompt:
-        sendMsg(sender, group, "例如：{}{} 会{}".format(getValue("inputIdentifier"), prompt[0], prompt[1]))
+        sendMsg(sender, group, "例如：{}{prompt[0]} 会{prompt[1]}".format(getValue("inputIdentifier"), prompt = prompt))
     return pend.wait(waitTime, seq, group)
 
 #发送相关
@@ -185,7 +178,7 @@ def sendMsg(receiver, group, message): #发送消息
         message = message.split("\n")
         if len(message[0]) < len(cmdPrompt): #若首行长度不足以覆盖cmdPrompt
             message[0] = "{:<{}}".format(message[0], len(cmdPrompt)) #格式化字符串，使其增加长度
-        print("\r{}".format("\n".join(message)), end = "\n{}".format(cmdPrompt)) #确保每次都是最后一条输出后带cmdPrompt
+        print("\r{}".format("\n".join(message)), end = f"\n{cmdPrompt}") #确保每次都是最后一条输出后带cmdPrompt
     else:
         while time() - sendTime < getValue("messagesDelay"): #等待上一条消息发完
             pass
@@ -202,7 +195,7 @@ def sendMsg(receiver, group, message): #发送消息
 
 def importModules(modulesName, modulesList = None): #导入模块
     modulesList = modulesList if modulesList else {}
-    for f in Path("{}".format(modulesName)).rglob("*.py"): #获取目录下的模块
+    for f in Path(f"{modulesName}").rglob("*.py"): #获取目录下的模块
         spec = importlib.util.spec_from_file_location(f.stem, f)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
@@ -225,6 +218,6 @@ def importCommands():
 
 #初始化
 
-getGlobals()
+setTemps()
 importMonitors()
 importCommands()

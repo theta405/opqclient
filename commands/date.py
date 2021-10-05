@@ -39,6 +39,6 @@ def execute(receive, sender, group, seq): #执行指令
     w[date(year, 1, 1).weekday()] += 1
     w[date(year, 1, 2).weekday()] += (year % 4 == 0 and year % 100 != 0) or year % 400 == 0
 
-    return "\n".join(["{} - {}".format(c[0], c[1]) for c in zip(name, w)])
+    return "\n".join([f"{c[0]} - {c[1]}" for c in zip(name, w)])
 
 #模块特殊函数

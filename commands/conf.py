@@ -67,12 +67,12 @@ def execute(receive, sender, group, seq): #执行指令
     name = args[0].name
     check = checkModule(name)
     if not check: #检查列表为空
-        return "❌没有找到 {} 模块❌".format(name)
+        return f"❌没有找到 {name} 模块❌"
     elif len(check) > 1: #检测模块是否被多次定义
         foundList = [[_] + [_ for _ in conflictList[_]] for _ in check]
-        sendMsg(sender, group, "在以下位置存在多个 {} 模块：\n{}\n请手动指定模块".format(name, "、".join(["{} [{}]".format(_[1], _[2]) for _ in foundList])))
+        sendMsg(sender, group, "在以下位置存在多个 {} 模块：\n{}\n请手动指定模块".format(name, "、".join([f"{_[1]} [{_[2]}]" for _ in foundList])))
         while True: #判断输入是否有效
-            choice = waitForReply(properties.moduleName, seq, sender, group, [foundList[0][2], "指定为{}".format(foundList[0][1])]) #提示并等待输入
+            choice = waitForReply(properties.moduleName, seq, sender, group, [foundList[0][2], f"指定为{foundList[0][1]}"]) #提示并等待输入
             if choice == None: #若超时则终止
                 return
             choice = getTypeFromAbbr(choice, {_[2]: _[0] for _ in foundList})
@@ -97,9 +97,9 @@ def getInformation(properties): #格式化输出权限
             v = signTable[v]
         else:
             v = "、".join([str(_) for _ in v]) if v else "无" #若列表内无数值则返回“无”
-        result += "\n> {}：{}".format(options[k][1], v)
+        result += f"\n> {options[k][1]}：{v}"
 
-    return result + "\n\n{}：可使用  {}：不可使用".format(signTable[True], signTable[False])
+    return result + f"\n\n{signTable[True]}：可使用  {signTable[False]}：不可使用"
 
 def getTypeFromAbbr(abbr, found): #根据缩写指定类型
     return found[abbr] if abbr in found else False
@@ -162,6 +162,6 @@ def parseArgs(parser, args, moduleType): #解析参数
             try: #防止中间有参数不对
                 args = parser.parse_known_args([name] + args[1])
             except parseException as e:
-                result += "× 后续参数解析出错，原因如下：\n{}\n".format(str(e))
+                result += f"× 后续参数解析出错，原因如下：\n{str(e)}\n"
                 break
         return result + "\n" + getInformation(properties)
