@@ -1,12 +1,12 @@
 from socketio import Client
+from socketio.exceptions import ConnectionError
 from public import getValue
 from time import sleep
 from threading import Thread
 
 sio = Client() #定义变量
 qq = getValue("qq")
-onSign = getValue("onSign")
-offSign = getValue("offSign")
+signTable = getValue("signTable")
 console = getValue("console")
 
 def parseMessage(message, sender, group = None, seq = None):
@@ -67,9 +67,9 @@ def connect(): #连接机器人
 				seq += 1
 		except KeyboardInterrupt: #若从控制台终止
 			exit()
-		except: #若连接失败则等待，同时在控制台输出文本
+		except ConnectionError: #若连接失败则等待，同时在控制台输出文本
 			i = not i
-			print("\r正在连接QQ机器人 {}".format(onSign if i else offSign), end = "")
+			print("\r正在连接QQ机器人 {}".format(signTable[i]), end = "")
 			sleep(1)
 
 if __name__ == "__main__":

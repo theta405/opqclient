@@ -1,7 +1,3 @@
-#模块特殊操作
-
-from public import helpException, parseException, getValue, sendMsg
-
 #通用部分
 
 from public import moduleProperties
@@ -16,7 +12,11 @@ properties = moduleProperties(
     }
 )
 
-#执行指令s
+#模块特殊操作
+
+from public import helpException, parseException, getValue, sendMsg
+
+#执行指令
 
 def execute(receive, sender, group, seq):
     commands = getValue("commandList")

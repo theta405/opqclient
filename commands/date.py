@@ -1,10 +1,6 @@
-#模块特殊操作
-
-from datetime import date
-
 #通用部分
 
-from public import customParser, moduleProperties, getValue
+from public import customParser, moduleProperties, getValue, waitForReply
 
 properties = moduleProperties(
     __file__, 
@@ -15,6 +11,10 @@ properties = moduleProperties(
         ]
     }
 )
+
+#模块特殊操作
+
+from datetime import date
 
 #指令解析器
 

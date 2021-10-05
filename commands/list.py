@@ -1,5 +1,3 @@
-#模块特殊操作
-
 #通用部分
 
 from public import customParser, moduleProperties, getValue
@@ -14,6 +12,8 @@ properties = moduleProperties(
         ]
     }
 )
+
+#模块特殊操作
 
 #指令解析器
 
@@ -32,16 +32,15 @@ def execute(receive, sender, group, seq): #执行指令
     parser = getParser()
     commands = getValue("commandList")
     identifier = getValue("identifier")
-    onSign = getValue("onSign")
-    offSign = getValue("offSign")
+    signTable = getValue("signTable")
 
     args = parser.parse_args(receive)
     permission = args.permission
 
     result = "指令列表：\n"
     for commandName in sorted(commands):
-        result += "\n{} {}{}".format("" if not permission else onSign if permitted(sender, group, commands[commandName].properties.getPermissions()) else offSign, identifier, commandName)
-    return result + ("\n\n{}：可使用  {}：不可使用".format(onSign, offSign) if permission else "")
+        result += "\n{} {}{}".format("" if not permission else signTable[permitted(sender, group, commands[commandName].properties.getPermissions())], identifier, commandName)
+    return result + ("\n\n{}：可使用  {}：不可使用".format(signTable[True], signTable[False]) if permission else "")
 
 #模块特殊函数
 

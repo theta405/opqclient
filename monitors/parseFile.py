@@ -1,9 +1,3 @@
-#模块特殊操作
-
-from urllib.request import urlretrieve #下载文件
-from public import sendMsg, postQQ
-from json import dumps
-
 #通用部分
 
 from public import moduleProperties
@@ -18,6 +12,12 @@ properties = moduleProperties(
         ]
     }
 )
+
+#模块特殊操作
+
+from urllib.request import urlretrieve #下载文件
+from public import sendMsg, postQQ
+from json import dumps
 
 #执行指令
 

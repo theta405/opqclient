@@ -33,11 +33,9 @@ class customParser(ArgumentParser): #自定义 ArgumentParser 子类，覆盖原
     def get_epilog(self, name, examples): #根据接收数据生成 epilog
         return "{}\n{}".format("例如：", "\n".join(["{}{} {}{}（{}）".format(getValue("identifier"), name, _[0], " " if _[0] else "", _[1]) for _ in examples]))
 
-class helpException(Exception): #显示帮助
-    pass
+class helpException(Exception): pass #显示帮助
 
-class parseException(Exception): #解析时出错
-    pass
+class parseException(Exception): pass #解析时出错
 
 class moduleProperties(): #模块的属性
     def __init__(self, modulePath, attributes, permissions = None):
@@ -60,26 +58,20 @@ class moduleProperties(): #模块的属性
             "permittedUsers": permittedUsers
         }
 
-    def getConfig(self):
-        return readConfig(["modules", self.moduleType], self.moduleName)
+    def getConfig(self, key = None, secondKey = None):
+        return readConfig(["modules", self.moduleType], self.moduleName, [key, secondKey])
 
     def getAttributes(self, key = None):
-        return self.getConfig()["attributes"][key] if key else \
-             self.getConfig()["attributes"]
+        return self.getConfig("attributes", key)
 
     def getPermissions(self, key = None):
-        return self.getConfig()["permissions"][key] if key else \
-             self.getConfig()["permissions"]
+        return self.getConfig("permissions", key)
 
     def setAttribute(self, key, value):
-        temp = self.getConfig()
-        temp["attributes"][key] = value
-        saveConfig(["modules", self.moduleType], self.moduleName, temp)
+        saveConfig(["modules", self.moduleType], self.moduleName, value, ["attributes", key])
 
     def setPermission(self, key, value):
-        temp = self.getConfig()
-        temp["permissions"][key] = value
-        saveConfig(["modules", self.moduleType], self.moduleName, temp)
+        saveConfig(["modules", self.moduleType], self.moduleName, value, ["permissions", key])
 
 class inputPend(): #获取输入时挂起进程的锁
     def __init__(self, source, seq, sender, group):
@@ -89,13 +81,23 @@ class inputPend(): #获取输入时挂起进程的锁
         self.group = group
         self.data = ""
         self.alive = True
-        setTemp(getPendName(self.sender), self) #初始化后直接设置
+        setTemp(getPendName(sender), self) #初始化后直接设置
 
     def disable(self):
         self.alive = False
 
     def modify(self, data):
         self.data = data
+
+    def wait(self, waitTime, seq, group):
+        for _ in range(waitTime): #超时自动退出
+            if seq != self.seq or group != self.group: #判断是否在同一群组或聊天
+                return
+            elif self.data != "": #若数据发生变化
+                self.disable()
+                return self.data
+            sleep(1)
+        self.disable() #超时后取消
 
 #全局数值操作
 
@@ -118,25 +120,28 @@ def hasValue(name): #检测是否有全局数值
 def hasConfig(configType, name):
     return Path("config/{}/{}.json".format("/".join(configType), name)).exists()
 
-def readConfig(configType, name): #读取设置
+def readConfig(configType, name, key = []): #读取设置
+    keys = "".join(["['{}']".format(_) for _ in key if _ != None]) #若键值为None则跳过
     with open("config/{}/{}.json".format("/".join(configType), name), "r") as config:
-        return loads(config.readline())
+        return eval("loads(config.readline()){}".format(keys)) if key else loads(config.readline())
 
-def saveConfig(configType, name, data, key = None): #保存设置
+def saveConfig(configType, name, data, key = []): #保存设置
     folderPath = "config/{}".format("/".join(configType))
     if not Path(folderPath).exists(): #检测文件夹是否存在
         Path(folderPath).mkdir(parents = True)
     if key: #若只修改一个键的值
-        temp = data
-        data = readConfig(configType, name)
-        data[key] = temp
+        keys = "".join(["['{}']".format(_) for _ in key if _ != None]) #若键值为None则跳过
+        temp = readConfig(configType, name)
+        exec("temp{} = data".format(keys)) #解决多索引的问题
+        data = temp
     with open("{}/{}.json".format(folderPath, name), "w+") as config:
         config.writelines([dumps(data, ensure_ascii = False)])
 
 def getGlobals(): #读取全局数值
     global globalVar
     globalVar = readConfig(["system"], "stash") #读取保存的全局数值
-    setTemp("cmdPrompt", "[{}]$ ".format(getValue("qq")))
+    setTemp("cmdPrompt", "[{}]$ ".format(getValue("qq"))) #命令行提示符
+    setTemp("signTable", {True: getValue("onSign"), False: getValue("offSign")}) #标记映射表
 
 def saveGlobals(): #保存全局数值
     saveConfig(["system"], "stash", globalVar)
@@ -146,29 +151,23 @@ def saveGlobals(): #保存全局数值
 def getPendName(sender):
     return "{}-pend".format(sender)
 
-def getPend(sender): #获取暂存数值
+def getPend(sender): #获取挂起类
     pendName = getPendName(sender)
     return getValue(pendName) if hasValue(pendName) else None
 
 def waitForReply(source, seq, sender, group, prompt = None): #等待返回值
-    def wait():
-        pend = inputPend(source, seq, sender, group)
-        for _ in range(waitTime): #超时自动退出
-            pend = getPend(sender)
-            if pend.data != "" and seq == pend.seq and group == pend.group: #判断是否在同一群组或聊天，且数据发生变化
-                pend.disable()
-                return pend.data
-            elif pend.data != "": #若已变更位置
-                return
-            sleep(1)
-        pend.disable() #超时后取消
-
     waitTime = getValue("waitTime")
-    sendMsg(sender, group, "> {} 正在等待输入，{} 分钟后失效\n请以 {}内容 的形式输入".format(source, waitTime // 60, getValue("inputIdentifier")))
+    pend = getPend(sender)
+    alive = False
+    if pend: #若已存在挂起
+        alive = pend.alive
+        pend.__init__(source, seq, sender, group)
+    else:
+        pend = inputPend(source, seq, sender, group)
+    sendMsg(sender, group, "{}> {} 正在等待输入，{} 分钟后失效\n请以 {}内容 的形式输入".format("⚠上一个等待输入的模块已失效⚠\n" if alive else "", source, waitTime // 60, getValue("inputIdentifier")))
     if prompt:
         sendMsg(sender, group, "例如：{}{} 会{}".format(getValue("inputIdentifier"), prompt[0], prompt[1]))
-
-    return wait()
+    return pend.wait(waitTime, seq, group)
 
 #发送相关
 

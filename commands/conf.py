@@ -1,20 +1,3 @@
-#模块特殊操作
-
-from public import parseException, sendMsg, waitForReply
-onOffTables = {"y": True, "n": False, "Y": True, "N": False}
-actionsList = ["add", "remove"]
-conflictList = {"commands": ["指令", "c"], "monitors": ["监视", "m"]}
-onOffOptions = {
-    "friendAvailable": ["fa", "在好友私聊使用"],
-    "groupAvailable": ["ga", "在群聊使用"]
-}
-actionsOptions = {
-    "disabledUsers": ["du", "禁用人员"],
-    "disabledGroups": ["dg", "禁用群聊"],
-    "permittedUsers": ["pu", "授权用户"]
-}
-options = dict(onOffOptions, **actionsOptions)
-
 #通用部分
 
 from public import customParser, moduleProperties, getValue
@@ -32,6 +15,24 @@ properties = moduleProperties(
         ]
     }
 )
+
+#模块特殊操作
+
+from public import parseException, sendMsg, waitForReply
+onOffTables = {"y": True, "n": False, "Y": True, "N": False}
+signTable = getValue("signTable")
+actionsList = ["add", "remove"]
+conflictList = {"commands": ["指令", "c"], "monitors": ["监视", "m"]}
+onOffOptions = {
+    "friendAvailable": ["fa", "在好友私聊使用"],
+    "groupAvailable": ["ga", "在群聊使用"]
+}
+actionsOptions = {
+    "disabledUsers": ["du", "禁用人员"],
+    "disabledGroups": ["dg", "禁用群聊"],
+    "permittedUsers": ["pu", "授权用户"]
+}
+options = dict(onOffOptions, **actionsOptions)
 
 #指令解析器
 
@@ -85,8 +86,6 @@ def execute(receive, sender, group, seq): #执行指令
 #模块特殊函数
 
 def getInformation(properties): #格式化输出权限
-    onSign = getValue("onSign")
-    offSign = getValue("offSign")
     result = "{}模块 {} 的当前属性如下：\n功能：{}".format(
         conflictList[properties.moduleType][0],
         properties.moduleName,
@@ -95,12 +94,12 @@ def getInformation(properties): #格式化输出权限
 
     for k, v in properties.getPermissions().items():
         if isinstance(v, bool): #判断v是布尔型还是列表
-            v = onSign if v else offSign
+            v = signTable[v]
         else:
             v = "、".join([str(_) for _ in v]) if v else "无" #若列表内无数值则返回“无”
         result += "\n> {}：{}".format(options[k][1], v)
 
-    return result + "\n\n{}：可使用  {}：不可使用".format(onSign, offSign)
+    return result + "\n\n{}：可使用  {}：不可使用".format(signTable[True], signTable[False])
 
 def getTypeFromAbbr(abbr, found): #根据缩写指定类型
     return found[abbr] if abbr in found else False
@@ -124,10 +123,10 @@ def parseArgs(parser, args, moduleType): #解析参数
         if actionType in onOffOptions: #若为布尔型
             status = onOffTables[args[0].status]
             if status == permission:
-                result = "[ {} ] 已经为 {} ，无需修改".format(options[actionType][1], onSign if status else offSign)
+                result = "[ {} ] 已经为 {} ，无需修改".format(options[actionType][1], signTable[status])
             else:
                 properties.setPermission(actionType, status)
-                result = "已将 [ {} ] 设为 {}".format(options[actionType][1], onSign if status else offSign)
+                result = "已将 [ {} ] 设为 {}".format(options[actionType][1], signTable[status])
         else: #若为添加删除
             targetId = args[0].id
             if args[0].action == "add":

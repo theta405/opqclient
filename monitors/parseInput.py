@@ -1,7 +1,3 @@
-#模块特殊操作
-
-from public import getValue, getPend, sendMsg
-
 #通用部分
 
 from public import moduleProperties
@@ -15,6 +11,10 @@ properties = moduleProperties(
         ]
     }
 )
+
+#模块特殊操作
+
+from public import getValue, getPend, sendMsg
 
 #执行指令
 
