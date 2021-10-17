@@ -58,14 +58,11 @@ class moduleProperties(): #模块的属性
             "permittedUsers": permittedUsers
         }
 
-    def getConfig(self, key = None, secondKey = None):
-        return readConfig(["modules", self.moduleType], self.moduleName, [key, secondKey])
-
     def getAttributes(self, key = None):
-        return self.getConfig("attributes", key)
+        return readConfig(["modules", self.moduleType], self.moduleName, ["attributes", key])
 
     def getPermissions(self, key = None):
-        return self.getConfig("permissions", key)
+        return readConfig(["modules", self.moduleType], self.moduleName, ["permissions", key])
 
     def setAttribute(self, key, value):
         saveConfig(["modules", self.moduleType], self.moduleName, value, ["attributes", key])
@@ -119,14 +116,13 @@ def hasConfig(configType, name):
     return Path("config/{}/{}.json".format("/".join(configType), name)).exists()
 
 def readConfig(configType, name, key = []): #读取设置
-    keys = "".join(["['{}']".format(_) for _ in key if _ != None]) #若键值为None则跳过
+    keys = "".join([f"['{_}']" for _ in key if _ != None]) #若键值为None则跳过
     with open("config/{}/{}.json".format("/".join(configType), name), "r") as config:
         return eval(f"loads(config.readline()){keys}")
 
 def saveConfig(configType, name, data, key = []): #保存设置
     folderPath = "config/{}".format("/".join(configType))
-    if not Path(folderPath).exists(): #检测文件夹是否存在
-        Path(folderPath).mkdir(parents = True)
+    Path(folderPath).mkdir(parents = True) if not Path(folderPath).exists() else 0
     if key: #若只修改一个键的值
         keys = "".join([f"['{_}']" for _ in key if _ != None]) #若键值为None则跳过
         temp = readConfig(configType, name)
@@ -217,6 +213,9 @@ def importCommands():
     setTemp("commandList", importModules("commands")) #导入指令模块并设置全局数值
 
 #初始化
+
+def initialize():
+    pass
 
 setTemps()
 importMonitors()

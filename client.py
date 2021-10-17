@@ -54,16 +54,19 @@ def OnFriendMsgs(message):
 def OnEvents(message):
 	print(message)
 
-def connect(): #连接机器人
+def connect(fromConsole = False):
 	i = None
 	seq = 0
 	while True:
 		try: #尝试连接机器人
 			sio.connect(url = "http://localhost:{}".format(getValue("port")), transports = ["websocket"])
-			print("{}已连接QQ机器人".format("" if i == None else "\n"))
-			while True:
-				parseMessage(input("\r{}".format(getValue("cmdPrompt"))), console, seq = seq) #命令行输入
-				seq += 1
+			if fromConsole:
+				print("{}已连接QQ机器人".format("" if i == None else "\n"))
+				while True:
+					parseMessage(input("\r{}".format(getValue("cmdPrompt"))), console, seq = seq) #命令行输入
+					seq += 1
+			else:
+				sio.wait()
 		except KeyboardInterrupt: #若从控制台终止
 			exit()
 		except ConnectionError: #若连接失败则等待，同时在控制台输出文本
@@ -72,4 +75,4 @@ def connect(): #连接机器人
 			sleep(1)
 
 if __name__ == "__main__":
-	connect()
+	connect(True)
