@@ -1,9 +1,8 @@
-#通用部分
+# 通用部分
 
-from public import customParser, moduleProperties, getValue
+from public import module, PARAMETER, customParser
 
-properties = moduleProperties(
-    __file__, 
+properties = module(
     {
         "description": "查询全部指令", 
         "examples": [
@@ -13,25 +12,27 @@ properties = moduleProperties(
     }
 )
 
-#模块特殊操作
+# 模块特殊操作
 
-#指令解析器
+from public import getValue, IDENTIFIER
+
+# 指令解析器
 
 def getParser():
-    para = getValue("para")
+    para = PARAMETER
 
-    parser = customParser(properties.getAttributes())
+    parser = customParser(properties.getProperty("attributes"))
 
     parser.add_argument("{}p".format(para), "{0}permission".format(para * 2), action = "store_true", help = "是否显示权限")
 
     return parser
 
-#执行部分
+# 执行部分
 
-def execute(receive, sender, group, seq): #执行指令
+def execute(receive, sender, group, nick, seq): # 执行指令
     parser = getParser()
     commands = getValue("commandList")
-    identifier = getValue("identifier")
+    identifier = IDENTIFIER
     signTable = getValue("signTable")
 
     args = parser.parse_args(receive)
@@ -39,12 +40,12 @@ def execute(receive, sender, group, seq): #执行指令
 
     result = "指令列表：\n"
     for commandName in sorted(commands):
-        result += "\n{} {}{}".format("" if not permission else signTable[permitted(sender, group, commands[commandName].properties.getPermissions())], identifier, commandName)
+        result += "\n{} {}{}".format("" if not permission else signTable[permitted(sender, group, commands[commandName].properties.getProperty("permissions"))], identifier, commandName)
     return result + ("\n\n{}：可使用  {}：不可使用".format(signTable[True], signTable[False]) if permission else "")
 
-#模块特殊函数
+# 模块特殊函数
 
-def permitted(sender, group, properties): #检查是否有权限执行
+def permitted(sender, group, properties): # 检查是否有权限执行
     if properties["permittedUsers"] and sender not in properties["permittedUsers"]:
         return False
     elif sender in properties["disabledUsers"]:

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="{{ url_for('static', filename = 'js/jQuery.js') }}"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename = 'css/main.css') }}" />
+        <title>服务器状态</title>
+    </head>
+    <body>
+        {% if running %}
+            <b><p id="indicator" class="running">服务器正在运行</p></b>
+            <div id="control" onclick="controlServer('SHUTDOWN')"><p id="controlCaption">关闭</p></div>
+        {% else %}
+            <b><p id="indicator" class="closed">服务器未在运行</p></b>
+            <div id="control" onclick="controlServer('START')"><p id="controlCaption">开启</p></div>
+        {% endif %}
+    </body>
+    <script>
+        main = "{{ url_for('info') }}";
+        function controlServer(control){
+            isShutdown = control == "SHUTDOWN"
+            $("#control").addClass("disabled");
+            $("#controlCaption").html("正在" + (isShutdown ? "关闭" : "开启") + " 请稍候");
+            $.ajax({url: main,
+                method: "POST", 
+                data: JSON.stringify({
+                    "control": control
+                }), 
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                timeout: 30000})
+            .then(function(response){
+                if (response == "SUCCESS"){
+                    $("#indicator").attr("class", isShutdown ? "closed" : "running")
+                    .html("服务器" + (isShutdown ? "未" : "正") + "在运行");
+                    $("#control").attr("onclick", "controlServer('" + (isShutdown ? "START" : "SHUTDOWN") + "')");
+                    $("#controlCaption").html(isShutdown ? "开启" : "关闭");
+                }else{
+                    $("#controlCaption").html(isShutdown ? "关闭" : "开启");
+                };
+            },function(){
+                $("#controlCaption").html(isShutdown ? "关闭" : "开启");
+                alert("failed");
+            })
+            .always(function(){
+                $("#control").removeClass("disabled");
+            });
+        }
+    </script>
+</html>

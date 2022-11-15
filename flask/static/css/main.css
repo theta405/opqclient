@@ -1,0 +1,11 @@
+.running {
+    color: green
+}
+
+.closed {
+    color: red
+}
+
+.disabled {
+    pointer-events: none;
+}

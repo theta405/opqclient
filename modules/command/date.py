@@ -1,9 +1,8 @@
-#通用部分
+# 通用部分
 
-from public import customParser, moduleProperties, getValue, waitForReply
+from public import module, PARAMETER, customParser
 
-properties = moduleProperties(
-    __file__, 
+properties = module(
     {
         "description": "返回一年内周一到周日有几天", 
         "examples": [
@@ -12,23 +11,23 @@ properties = moduleProperties(
     }
 )
 
-#模块特殊操作
+# 模块特殊操作
 
 from datetime import date
 
-#指令解析器
+# 指令解析器
 
 def getParser():
-    para = getValue("para")
-    parser = customParser(properties.getAttributes())
+    para = PARAMETER
+    parser = customParser(properties.getProperty("attributes"))
 
     parser.add_argument("year", type = int, help = "查询的年份 [ %(type)s ]")
 
     return parser
 
-#执行指令
+# 执行指令
 
-def execute(receive, sender, group, seq): #执行指令
+def execute(receive, sender, group, nick, seq): # 执行指令
     parser = getParser()
 
     args = parser.parse_args(receive)
@@ -41,4 +40,4 @@ def execute(receive, sender, group, seq): #执行指令
 
     return "\n".join([f"{c[0]} - {c[1]}" for c in zip(name, w)])
 
-#模块特殊函数
+# 模块特殊函数
