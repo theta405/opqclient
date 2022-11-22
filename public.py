@@ -109,8 +109,8 @@ class customDict(dict): # 自定义字典，可用属性访问元素
     def __setattr__(self, name, val):
         self[name] = val
 
-    def __init__(self, data, default = None):
-        super().__init__(data)
+    def __init__(self, data, default = None, **kwargs):
+        super().__init__(dict(data, **kwargs))
         self.default = default
         for e in self.keys():
             if isinstance(self[e], dict):

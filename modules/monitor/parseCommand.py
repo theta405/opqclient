@@ -13,7 +13,7 @@ properties = module(
 
 # 模块特殊操作
 
-from public import getValue, IDENTIFIER, CONSOLE, helpException, parseException, customException, sendMsg
+from public import getValue, IDENTIFIER, INPUT_IDENTIFIER, CONSOLE, helpException, parseException, customException, sendMsg
 
 # 执行指令
 
@@ -23,7 +23,7 @@ def execute(receive, sender, group, nick, seq):
     
     temp = receive["Content"].strip() # 获取消息，并去除头尾空格
     if temp.strip()[0] != identifier:
-        if sender == CONSOLE: sendMsg(sender, group, nick, f"请以 {IDENTIFIER}<指令> 的形式输入\n如：{IDENTIFIER}list")
+        if sender == CONSOLE and temp.strip()[0] != INPUT_IDENTIFIER: sendMsg(sender, group, nick, f"请以 {IDENTIFIER}<指令> 的形式输入\n如：{IDENTIFIER}list")
         return
 
     command = temp[1:].split(" ") # 分割指令

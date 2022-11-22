@@ -61,7 +61,7 @@ def connect(startConsole = False):
 			if startConsole:
 				print("{}已连接QQ机器人".format("" if i == None else "\n"))
 				while True:
-					parseMessage(input(f"\r{getValue('cmdPrompt')}"), CONSOLE, seq = seq) # 命令行输入
+					parseMessage(input(f"\r{getValue('cmdPrompt')}"), sender = CONSOLE, seq = seq) # 命令行输入
 					seq += 1
 			else:
 				sio.wait()
