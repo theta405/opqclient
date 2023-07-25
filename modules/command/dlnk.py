@@ -30,8 +30,8 @@ DATA = "https://appswh.chaoxing.com/vclass/page/viewlist/data?uuid=" # 速课数
 CARD = "https://mooc1.chaoxing.com/knowledge/cards?" # 抓取UUID的URL
 DIRECT = "https://appswh.chaoxing.com/vclass/page/view/" # 速课直链URL
 
-username = "18142871059" # 后面记得改
-password = "c2hpZGE0NDM0MDU="
+username = "" # 后面记得改
+password = ""
 
 session = session() # 实例化session
 
