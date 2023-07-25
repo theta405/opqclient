@@ -20,8 +20,8 @@ from public import sendMsg, customException
 
 session = session()
 
-username = "320200945781"
-password = "hanxuda_443405"
+username = ""
+password = ""
 
 # 指令解析器
 
